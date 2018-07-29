@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>DBGen{% if self.title() %} - {% endif %}{% block title %}{% endblock %}</title>
+
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/core.css') }}">
+	{% block external %}{% endblock %}
+</head>
+<body>
+    <header class="span-container padded">
+        <div class="span span-4">
+            <p id="title">Dataset Generator {{ version }}</p>
+        </div>
+        <div class="span span-8">
+            {% block navbar %}{% endblock %}
+        </div>
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <div id="footer-overlap"></div>
+    <footer class="padded">
+        <p></p>
+    </footer>
+</body>
+</html>

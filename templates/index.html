@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block external %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+<!--<script src="{{ url_for('static', filename='js/_external_/interact.min.js') }}"></script>-->
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% endblock %}
+
+{% block navbar %}
+<button type="button" id="generate">Generate</button>
+{% endblock %}
+
+{% block content %}
+<!-- This is for any *completely* static data - or data that is best served
+from the backend. -->
+{% endblock %}
