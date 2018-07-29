@@ -1,7 +1,7 @@
-const React = require('react');
-const ReactDOM = require('react-dom');
+import React from 'react';
+import ReactDOM from 'react-dom';
 
-module.exports = class Workspace extends React.Component {
+export default class Workspace extends React.Component {
     render() { 
         return (
             <div className="workspace span span-10"></div>
