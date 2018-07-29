@@ -1,0 +1,9 @@
+# Dependencies, meta project files, hidden files
+node_modules
+_*_/
+.*
+!.babelrc
+!.gitignore
+
+# Build files
+/static/js/
