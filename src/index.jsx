@@ -1,10 +1,16 @@
 const React = require('react');
 const ReactDOM = require('react-dom');
 
-export class App extends React.Component {
+const Panel = require('./panel.jsx');
+const Workspace = require('./workspace.jsx');
+
+module.exports = class App extends React.Component {
     render() {
         return (
-            <div></div>
+            <div className="content span-container">
+                <Panel />
+                <Workspace />
+            </div>
         );
     }
 }

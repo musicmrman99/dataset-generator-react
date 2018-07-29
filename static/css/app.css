@@ -1,0 +1,18 @@
+/* Content (high-level) */
+
+.content {
+    position: relative;
+    width: 100%;
+    /* 60px and 100px are the sizes of the header and footer.
+    If these change, UPDATE THIS CSS or usability will suffer! */
+    height: calc(100vh - 60px - 100px);
+}
+
+.panel {
+    height: 100%;
+    background-color: #808080;
+}
+.workspace {
+    height: 100%;
+    background-color: #f0f0f0;
+}
