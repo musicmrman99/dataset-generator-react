@@ -5,7 +5,8 @@ export default class Panel extends React.Component {
     render() {
         return (
             <div className="panel span span-2">
-                <ObjectType typeID="table" name="Table" />
+                <ObjectType typeID="table" name="Table"
+                    imgSrc="static/images/object-types/table.png" />
             </div>
         );
     }
