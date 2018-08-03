@@ -1,10 +1,19 @@
-const React = require('react');
-const ReactDOM = require('react-dom');
+import React from 'react';
+import ReactDOM from 'react-dom';
 
-export class App extends React.Component {
+import Panel from './panel';
+import Workspace from './workspace';
+
+import ResourceManager from './helpers/resource-manager';
+window.resourceManager = new ResourceManager();
+
+export default class App extends React.Component {
     render() {
         return (
-            <div></div>
+            <div className="content span-container">
+                <Panel />
+                <Workspace />
+            </div>
         );
     }
 }
