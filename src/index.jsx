@@ -1,8 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import Panel from './panel.jsx';
-import Workspace from './workspace.jsx';
+import Panel from './panel';
+import Workspace from './workspace';
 
 export default class App extends React.Component {
     render() {
