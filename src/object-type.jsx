@@ -22,13 +22,6 @@ export default class ObjectType extends React.Component {
             .then((resource) => {
                 this.setState({ imgSrc: resource["path"] });
             });
-
-        resourceManager.getResourceTypes()
-            .then((resourceTypes) => {
-                return resourceManager.getResourcePath(
-                    resourceTypes.image,
-                    "object-types/" + this.props.imgSrc );
-            });
     }
 
     render() {
