@@ -22,7 +22,7 @@ function dropCollector (connect, monitor) {
 
 @DropTarget(InteractableTypes.OBJECT_TYPE, dropSpec, dropCollector)
 export default class Workspace extends React.Component {
-    render() {
+    render () {
         const dropTargetNode = this.props.dropTargetNode;
         const { isDragging, isOver } = this.props;
 

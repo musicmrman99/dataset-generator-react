@@ -42,7 +42,7 @@ export default class ObjectType extends React.Component {
             });
     }
 
-    render() {
+    render () {
         const dragSourceNode = this.props.dragSourceNode;
         return dragSourceNode(
             <div className="object-type">

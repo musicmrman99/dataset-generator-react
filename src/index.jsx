@@ -35,7 +35,7 @@ export default class App extends React.Component {
         }, tableSpec));
     }
 
-    render() {
+    render () {
         return (
             <div className="content span-container">
                 <Panel tables={this.state.tables} actions={this.actions} />
