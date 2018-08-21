@@ -3,7 +3,7 @@ import React from 'react';
 import { DragSource } from 'react-dnd';
 import InteractableTypes from './interactable-types';
 
-// NOTE: This assumes that 'resourceManager' is global.
+// NOTE: This module assumes that 'resourceManager' is global.
 //       This is likely to be set in index.jsx
 
 const dragSpec = {
