@@ -33,3 +33,19 @@
     height: 100%;
     width: auto;
 }
+
+.object-instance-table {
+    background-color: #c0c0c0;
+    min-width: 60px;
+    min-height: 60px;
+}
+
+/* Drag and Drop States */
+
+.dropzone { border: 2px dashed transparent; }
+.dropzone-create-drag { border-color: #7971df; }
+.dropzone-create-hover { border-color: #2a1ddb; }
+.dropzone-move-drag { border-color: #79df71; }
+.dropzone-move-hover { border-color: #2adb1d; }
+.dropzone-delete-drag { border-color: #df7971; }
+.dropzone-delete-hover { border-color: #db2a1d; }

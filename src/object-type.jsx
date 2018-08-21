@@ -1,8 +1,26 @@
 import React from 'react';
 
+import { DragSource } from 'react-dnd';
+import InteractableTypes from './interactable-types';
+
 // NOTE: This assumes that 'resourceManager' is global.
 //       This is likely to be set in index.jsx
 
+const dragSpec = {
+    beginDrag (props) {
+        return {
+            typeID: props.typeID
+        }
+    }
+}
+
+function dragCollector (connect, monitor) {
+    return {
+        dragSourceNode: connect.dragSource()
+    }
+}
+
+@DragSource(InteractableTypes.OBJECT_TYPE, dragSpec, dragCollector)
 export default class ObjectType extends React.Component {
     constructor (props) {
         super(props);
@@ -25,7 +43,8 @@ export default class ObjectType extends React.Component {
     }
 
     render() {
-        return (
+        const dragSourceNode = this.props.dragSourceNode;
+        return dragSourceNode(
             <div className="object-type">
                 <p className="object-type-name">{this.props.name}</p>
                 <img src={this.state.imgSrc} alt={this.props.name+" object type"}
