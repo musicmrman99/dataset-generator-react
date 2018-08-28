@@ -21,7 +21,8 @@ export default class App extends React.Component {
         }
 
         this.actions = {
-            createNewTable: this.createNewTable.bind(this)
+            createNewTable: this.createNewTable.bind(this),
+            deleteTable: this.deleteTable.bind(this)
         }
     }
 
@@ -71,6 +72,12 @@ export default class App extends React.Component {
                 // Overwrite with caller's object
                 tableSpec
             )
+        )});
+    }
+
+    deleteTable (name) {
+        this.setState({ tables: this.state.tables.filter(
+            (table) => (table.name !== name)
         )});
     }
 

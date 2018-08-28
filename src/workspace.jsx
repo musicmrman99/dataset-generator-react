@@ -3,7 +3,6 @@ import Table from './table';
 
 import { DropTarget } from 'react-dnd';
 import InteractableTypes from './interactable-types';
-
 import conditionalJoin from './helpers/conditional-join';
 
 @DropTarget(InteractableTypes.TABLE_TYPE,
