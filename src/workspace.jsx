@@ -6,21 +6,18 @@ import InteractableTypes from './interactable-types';
 
 import conditionalJoin from './helpers/conditional-join';
 
-const dropSpec = {
-    drop (props, monitor) {
-        props.actions.createNewTable({ name: "NewTable" });
-    }
-}
-
-function dropCollector (connect, monitor) {
-    return {
+@DropTarget(InteractableTypes.TABLE_TYPE,
+    {
+        drop (props, monitor) {
+            props.actions.createNewTable({ name: "NewTable" });
+        }
+    },
+    (connect, monitor) => ({
         dropTargetNode: connect.dropTarget(),
         canDrop: monitor.canDrop(),
         isOver: monitor.isOver()
-    }
-}
-
-@DropTarget(InteractableTypes.TABLE_TYPE, dropSpec, dropCollector)
+    })
+)
 export default class Workspace extends React.Component {
     render () {
         const dropTargetNode = this.props.dropTargetNode;
