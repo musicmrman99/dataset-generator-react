@@ -57,13 +57,21 @@ export default class App extends React.Component {
             tableSpec.name = this.getUniqueName(tableSpec.name)
         }
 
-        this.state.tables.push(Object.assign({
-            name: "",
-            settings: {
-                numRecords: 0
-            },
-            fields: []
-        }, tableSpec));
+        // ie. tables.push(), the React-friendly way
+        this.setState({tables: this.state.tables.concat(
+            Object.assign(
+                // Defaults
+                {
+                    name: "",
+                    settings: {
+                        numRecords: 0
+                    },
+                    fields: []
+                },
+                // Overwrite with caller's object
+                tableSpec
+            )
+        )});
     }
 
     render () {
