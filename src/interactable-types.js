@@ -1,5 +1,6 @@
 export default Object.freeze({
-    OBJECT_TYPE: "ObjectType",
+    TABLE_TYPE: "TableType",
+    FIELD_TYPE: "FieldType",
     TABLE: "Table",
     FIELD: "Field"
 });

@@ -15,16 +15,16 @@ const dropSpec = {
 function dropCollector (connect, monitor) {
     return {
         dropTargetNode: connect.dropTarget(),
-        isDragging: Boolean(monitor.getItem()),
+        canDrop: monitor.canDrop(),
         isOver: monitor.isOver()
     }
 }
 
-@DropTarget(InteractableTypes.OBJECT_TYPE, dropSpec, dropCollector)
+@DropTarget(InteractableTypes.TABLE_TYPE, dropSpec, dropCollector)
 export default class Workspace extends React.Component {
     render () {
         const dropTargetNode = this.props.dropTargetNode;
-        const { isDragging, isOver } = this.props;
+        const { canDrop, isOver } = this.props;
 
         // Add whatever props a table needs
         // About the 'key' prop: https://reactjs.org/docs/lists-and-keys.html
@@ -34,7 +34,7 @@ export default class Workspace extends React.Component {
         return dropTargetNode(
             <div className={conditionalJoin({
                 "workspace span span-10 dropzone": true,
-                "dropzone-create-drag": isDragging,
+                "dropzone-create-drag": canDrop,
                 "dropzone-create-hover": isOver
             }, " ")}>
                 {tables}
