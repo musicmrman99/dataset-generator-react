@@ -8,7 +8,7 @@ import conditionalJoin from './helpers/conditional-join';
 
 const dropSpec = {
     drop (props, monitor) {
-        props.actions.createNewTable({name: "NewTable"});
+        props.actions.createNewTable({ name: "NewTable" });
     }
 }
 
