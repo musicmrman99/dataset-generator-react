@@ -23,7 +23,7 @@ export default Object.freeze(
                 },
                 (connect, monitor) => ({ dragSourceNode: connect.dragSource() })
             )
-            class SpecificObjectType extends React.Component {
+            class ObjectTypeDraggable extends React.Component {
                 render () {
                     const dragSourceNode = this.props.dragSourceNode;
                     return dragSourceNode(
@@ -34,7 +34,7 @@ export default Object.freeze(
                 }
             }
 
-            accum[objectTypeName] = SpecificObjectType;
+            accum[objectTypeName] = ObjectTypeDraggable;
             return accum;
         }, {}
     )
