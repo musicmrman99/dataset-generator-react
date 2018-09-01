@@ -22,7 +22,9 @@ export default class App extends React.Component {
 
         this.actions = {
             createNewTable: this.createNewTable.bind(this),
-            deleteTable: this.deleteTable.bind(this)
+            deleteTable: this.deleteTable.bind(this),
+
+            createNewField: this.createNewField.bind(this)
         }
     }
 
@@ -86,6 +88,42 @@ export default class App extends React.Component {
         this.setState({ tables: this.state.tables.filter(
             (table) => (table.name !== name)
         )});
+    }
+
+    createNewField(tableName, fieldSpec) {
+        // Ensure the table exists (this should never fail, but you never know)
+        const tableNames = this.state.tables.map((table) => table.name);
+        const tableExists = Boolean(tableNames.find((checkTableName) => checkTableName === tableName));
+        if (!tableExists) {
+            // If tableName === undefined, I laugh at you.
+            throw Error("No such table '"+tableName+"'");
+        }
+
+        // Ensure that the name is unique in this table
+        if ("name" in fieldSpec) {
+            const table = this.state.tables.find((table) => table.name === tableName)
+            fieldSpec.name = this.getUniqueName(fieldSpec.name,
+                table.fields.map((field) => field.name)
+            )
+        }
+
+        // ie. tables[tableName].fields.push(), the React-friendly way
+        const newTables = this.state.tables.slice();
+        const modTable = newTables.find((table) => table.name === tableName)
+        modTable.fields.push(
+            Object.assign(
+                // Defaults
+                {
+                    name: "",
+                    settings: {
+                        // TODO: fill this out
+                    }
+                },
+                // Overwrite with caller's object
+                fieldSpec
+            )
+        );
+        this.setState({tables: newTables});
     }
 
     render () {
