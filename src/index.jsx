@@ -27,35 +27,42 @@ export default class App extends React.Component {
     }
 
     /**
-     * Check if tableName already exists in the table list and suffix an index
-     * to ensure it is unique.
-     * @param {String} tableName The table name to check.
-     * @returns {String} A unique table name.
+     * Check if name already exists in the given set of items. If it does not,
+     * return name. If it does, then return name suffixed with an incrementing
+     * number to ensure it is unique.
+     * @param {String} name The name to check.
+     * @param {Array} set The set of items that the returned name must be unique
+     * within.
+     * @returns {String} A unique name, within the scope of the given set.
      */
-    getUniqueName (tableName) {
-        const tablesWithName = this.state.tables.filter(
-            (table) => table.name.includes(tableName)
+    getUniqueName (name, set) {
+        const nameIndexes = set.map((objName) => {
+            const match = objName.match(/^(.*?)([0-9]*)$/); // Split into name and index
+
+            // If it matches, return the index. If the index is "", use 0.
+            if (match[1] === name) return parseInt(match[2]) || 0;
+            else return null; // If no match, return null
+        }).filter(
+            (objNameIndex) => objNameIndex != null // Filter out the nulls
         )
+
         // This table name would be unique
-        if (tablesWithName.length === 0) return tableName;
+        if (nameIndexes.length === 0) return name;
 
-        // Get the highest index for this name
-        // NOTE: This is slow, but it would take a lot of handling to keep track
-        // of table name updates.
-        const suffixIndex = tablesWithName.reduce((accumMax, table) => {
-            const nameIndex = table.name.split(tableName)[1];
-            const checkMax = parseInt(nameIndex) || 0; // If NaN, use 0
-            return Math.max(accumMax, checkMax);
-        }, 0);
+        // Get the next index for this name
+        const suffixIndex = nameIndexes.reduce(
+            (accumMax, nameIndex) => Math.max(accumMax, nameIndex)
+        , 0);
 
-        // Concatenate the name and the next index for this name
-        return tableName + (suffixIndex+1);
+        return name + (suffixIndex+1);
     }
 
     createNewTable (tableSpec) {
         // Ensure that the name is unique
         if ("name" in tableSpec) {
-            tableSpec.name = this.getUniqueName(tableSpec.name)
+            tableSpec.name = this.getUniqueName(tableSpec.name,
+                this.state.tables.map((table) => table.name)
+            )
         }
 
         // ie. tables.push(), the React-friendly way
