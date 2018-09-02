@@ -39,6 +39,17 @@
     min-width: 60px;
     min-height: 60px;
 }
+.object-instance-table hr {
+    margin: 5px 0;
+}
+.object-instance-table-fields {
+    width: 100%;
+    min-height: 30px;
+}
+
+.obj-instance-field {
+    background-color: #c0c0c0;
+}
 
 /* Drag and Drop States */
 

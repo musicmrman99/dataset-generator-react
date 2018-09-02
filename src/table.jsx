@@ -1,4 +1,5 @@
 import React from 'react';
+import Field from './field';
 
 import { DragSource, DropTarget } from 'react-dnd';
 import InteractableTypes from './interactable-types';
@@ -30,18 +31,24 @@ export default class Table extends React.Component {
             [this.props.dragSourceNode, this.props.dropTargetNode];
         const { canDrop, isOver } = this.props;
 
+        // About the 'key' prop: https://reactjs.org/docs/lists-and-keys.html
+        const fields = this.props.fields.map((field) =>
+            <Field key={field.name}
+                name={field.name} settings={field.settings}
+                actions={this.props.actions} />)
+
         return dragSourceNode(
             <div className="object-instance-table">
                 <span>Name: tbl{this.props.name}</span>
-                <hr />
                 <p>Settings: {JSON.stringify(this.props.settings)}</p>
+                <hr />
                 {dropTargetNode(
                     <div className={conditionalJoin({
-                        "table-fields dropzone": true,
+                        "object-instance-table-fields dropzone": true,
                         "dropzone-create-drag": canDrop,
                         "dropzone-create-hover": isOver
                     }, " ")}>
-                        <p>Fields: {JSON.stringify(this.props.fields)}</p>
+                        {fields}
                     </div>
                 )}
             </div>

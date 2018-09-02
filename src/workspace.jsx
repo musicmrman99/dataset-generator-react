@@ -22,7 +22,6 @@ export default class Workspace extends React.Component {
         const dropTargetNode = this.props.dropTargetNode;
         const { canDrop, isOver } = this.props;
 
-        // Add whatever props a table needs
         // About the 'key' prop: https://reactjs.org/docs/lists-and-keys.html
         const tables = this.props.tables.map((table) =>
             <Table key={table.name}
