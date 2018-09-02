@@ -24,7 +24,8 @@ export default class App extends React.Component {
             createNewTable: this.createNewTable.bind(this),
             deleteTable: this.deleteTable.bind(this),
 
-            createNewField: this.createNewField.bind(this)
+            createNewField: this.createNewField.bind(this),
+            deleteField: this.deleteField.bind(this)
         }
     }
 
@@ -123,6 +124,13 @@ export default class App extends React.Component {
                 fieldSpec
             )
         );
+        this.setState({tables: newTables});
+    }
+
+    deleteField (tableName, fieldName) {
+        const newTables = this.state.tables.slice();
+        const table = newTables.find((table) => table.name === tableName);
+        table.fields = table.fields.filter((field) => field.name !== fieldName);
         this.setState({tables: newTables});
     }
 

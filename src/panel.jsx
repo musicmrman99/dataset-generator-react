@@ -5,10 +5,18 @@ import { DropTarget } from 'react-dnd';
 import InteractableTypes from './interactable-types';
 import conditionalJoin from './helpers/conditional-join';
 
-@DropTarget(InteractableTypes.TABLE,
+// See https://github.com/react-dnd/react-dnd/issues/330
+@DropTarget([InteractableTypes.TABLE, InteractableTypes.FIELD],
     {
         drop (props, monitor) {
-            props.actions.deleteTable(monitor.getItem().tableName);
+            const item = monitor.getItem();
+            const itemType = monitor.getItemType();
+
+            if (itemType === InteractableTypes.TABLE) {
+                props.actions.deleteTable(item.tableName);
+            } else if (itemType === InteractableTypes.FIELD) {
+                props.actions.deleteField(item.tableName, item.fieldName);
+            }
         }
     },
     (connect, monitor) => ({

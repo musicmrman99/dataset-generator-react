@@ -35,7 +35,7 @@ export default class Table extends React.Component {
         const fields = this.props.fields.map((field) =>
             <Field key={field.name}
                 name={field.name} settings={field.settings}
-                actions={this.props.actions} />)
+                tableName={this.props.name} actions={this.props.actions} />)
 
         return dragSourceNode(
             <div className="object-instance-table">
