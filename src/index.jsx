@@ -25,7 +25,8 @@ export default class App extends React.Component {
             deleteTable: this.deleteTable.bind(this),
 
             createNewField: this.createNewField.bind(this),
-            deleteField: this.deleteField.bind(this)
+            deleteField: this.deleteField.bind(this),
+            moveField: this.moveField.bind(this)
         }
     }
 
@@ -131,6 +132,51 @@ export default class App extends React.Component {
         const newTables = this.state.tables.slice();
         const table = newTables.find((table) => table.name === tableName);
         table.fields = table.fields.filter((field) => field.name !== fieldName);
+        this.setState({tables: newTables});
+    }
+
+    moveField(fieldName, fromTableName, toTableName) {
+        const newTables = this.state.tables.slice();
+
+        // Move the field to the end of the same table
+        if (fromTableName === toTableName) {
+            // Find the objects represented by the given names
+            const tableIndex = newTables.findIndex((table) => table.name === fromTableName);
+            const table = newTables[tableIndex] = Object.assign({}, newTables[tableIndex]);
+            table.fields = table.fields.slice();
+
+            // The field's name is already unique, or it wouldn't be called what it is!
+
+            // Move the field
+            const fieldIndex = table.fields.findIndex((field) => field.name === fieldName);
+            const field = table.fields[fieldIndex]; // Keep reference
+            table.fields.splice(fieldIndex, 1); // Remove
+            table.fields.push(field); // Push back
+
+        // Move the field to the end of the other table
+        } else {
+            // Find the objects represented by the given names (and make necessary copies)
+            const fromTableIndex = newTables.findIndex((table) => table.name === fromTableName);
+            const fromTable = newTables[fromTableIndex] = Object.assign({}, newTables[fromTableIndex]);
+            fromTable.fields = fromTable.fields.slice();
+
+            const toTableIndex = newTables.findIndex((table) => table.name === toTableName);
+            const toTable = newTables[toTableIndex] = Object.assign({}, newTables[toTableIndex]);
+            toTable.fields = toTable.fields.slice();
+        
+            const fieldIndex = fromTable.fields.findIndex((field) => field.name === fieldName);
+            const field = Object.assign({}, fromTable.fields[fieldIndex]);
+
+            // Ensure that the name is unique in toTable
+            field.name = this.getUniqueName(field.name,
+                toTable.fields.map((field) => field.name)
+            )
+
+            // Move the field
+            fromTable.fields.splice(fieldIndex, 1);
+            toTable.fields.push(field);
+        }
+
         this.setState({tables: newTables});
     }
 
