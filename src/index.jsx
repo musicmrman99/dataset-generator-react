@@ -21,10 +21,10 @@ export default class App extends React.Component {
         }
 
         this.actions = {
-            createNewTable: this.createNewTable.bind(this),
+            createTable: this.createTable.bind(this),
             deleteTable: this.deleteTable.bind(this),
 
-            createNewField: this.createNewField.bind(this),
+            createField: this.createField.bind(this),
             deleteField: this.deleteField.bind(this),
             moveField: this.moveField.bind(this)
         }
@@ -89,7 +89,7 @@ export default class App extends React.Component {
         return name + suffixIndex;
     }
 
-    createNewTable (tableSpec) {
+    createTable (tableSpec) {
         // Ensure that the name is unique
         if ("name" in tableSpec) {
             tableSpec.name = this.getUniqueName(tableSpec.name,
@@ -120,7 +120,7 @@ export default class App extends React.Component {
         this.setState({tables: newTables});
     }
 
-    createNewField(tableName, fieldSpec) {
+    createField(tableName, fieldSpec) {
         // Ensure the table exists (this should never fail, but you never know)
         const tableNames = this.state.tables.map((table) => table.name);
         const tableExists = Boolean(tableNames.find((checkTableName) => checkTableName === tableName));

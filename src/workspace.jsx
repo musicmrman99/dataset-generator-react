@@ -8,7 +8,7 @@ import conditionalJoin from './helpers/conditional-join';
 @DropTarget(InteractableTypes.TABLE_TYPE,
     {
         drop (props, monitor) {
-            props.actions.createNewTable({ name: "NewTable" });
+            props.actions.createTable({ name: "NewTable" });
         }
     },
     (connect, monitor) => ({

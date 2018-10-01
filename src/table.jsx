@@ -18,7 +18,7 @@ import conditionalJoin from './helpers/conditional-join';
         drop (props, monitor) {
             const itemType = monitor.getItemType();
             if (itemType === InteractableTypes.FIELD_TYPE) {
-                props.actions.createNewField(props.name, {name: "NewField"});
+                props.actions.createField(props.name, {name: "NewField"});
             } else if (itemType === InteractableTypes.FIELD) {
                 const item = monitor.getItem();
                 props.actions.moveField(item.fieldName, item.tableName, props.name);
