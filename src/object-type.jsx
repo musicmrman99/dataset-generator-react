@@ -1,6 +1,6 @@
 import React from 'react';
 
-// NOTE: This assumes that 'resourceManager' is global.
+// NOTE: This module assumes that 'resourceManager' is global.
 //       This is likely to be set in index.jsx
 
 export default class ObjectType extends React.Component {
@@ -24,7 +24,7 @@ export default class ObjectType extends React.Component {
             });
     }
 
-    render() {
+    render () {
         return (
             <div className="object-type">
                 <p className="object-type-name">{this.props.name}</p>
