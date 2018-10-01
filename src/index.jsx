@@ -70,8 +70,7 @@ export default class App extends React.Component {
         }
 
         // ie. tables.push(), the React-friendly way
-        this.setState({tables: this.state.tables.concat(
-            Object.assign(
+        const newTable = Object.assign(
                 // Defaults
                 {
                     name: "",
@@ -82,14 +81,15 @@ export default class App extends React.Component {
                 },
                 // Overwrite with caller's object
                 tableSpec
-            )
-        )});
+        );
+        const newTables = this.state.tables.concat(newTable);
+        this.setState({tables: newTables});
     }
 
     deleteTable (name) {
-        this.setState({ tables: this.state.tables.filter(
-            (table) => (table.name !== name)
-        )});
+        // Filter out the given table
+        const newTables = this.state.tables.filter((table) => (table.name !== name));
+        this.setState({tables: newTables});
     }
 
     createNewField(tableName, fieldSpec) {
@@ -109,11 +109,7 @@ export default class App extends React.Component {
             )
         }
 
-        // ie. tables[tableName].fields.push(), the React-friendly way
-        const newTables = this.state.tables.slice();
-        const modTable = newTables.find((table) => table.name === tableName)
-        modTable.fields.push(
-            Object.assign(
+        const newField = Object.assign(
                 // Defaults
                 {
                     name: "",
@@ -124,14 +120,22 @@ export default class App extends React.Component {
                 // Overwrite with caller's object
                 fieldSpec
             )
-        );
+
+        // ie. tables[tableName].fields.push(), the React-friendly way
+        const newTables = this.state.tables.slice();
+        const tableIndex = newTables.findIndex((table) => table.name === tableName);
+        const table = newTables[tableIndex] = Object.assign({}, newTables[tableIndex]);
+        table.fields = table.fields.concat(newField);
+
         this.setState({tables: newTables});
     }
 
     deleteField (tableName, fieldName) {
         const newTables = this.state.tables.slice();
-        const table = newTables.find((table) => table.name === tableName);
+        const tableIndex = newTables.findIndex((table) => table.name === tableName);
+        const table = newTables[tableIndex] = Object.assign({}, newTables[tableIndex]);
         table.fields = table.fields.filter((field) => field.name !== fieldName);
+
         this.setState({tables: newTables});
     }
 
