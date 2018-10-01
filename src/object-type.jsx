@@ -11,7 +11,9 @@ export default class ObjectType extends React.Component {
         this.state = {
             imgSrc: ""
         };
+    }
 
+    componentDidMount () {
         // Async-initialised (kind-of-has-to-be state)
         resourceManager.getResourceTypes()
             .then((resourceTypes) => {
