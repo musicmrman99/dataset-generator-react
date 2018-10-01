@@ -10,7 +10,6 @@ import Workspace from './workspace';
 import ResourceManager from './helpers/resource-manager';
 window.resourceManager = new ResourceManager();
 
-// builds fine, but spits errors from VS Code
 @DragDropContext(HTML5Backend)
 export default class App extends React.Component {
     constructor (props) {
