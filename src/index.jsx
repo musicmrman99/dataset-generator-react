@@ -39,26 +39,54 @@ export default class App extends React.Component {
      * within.
      * @returns {String} A unique name, within the scope of the given set.
      */
-    getUniqueName (name, set) {
-        const nameIndexes = set.map((objName) => {
-            const match = objName.match(/^(.*?)([0-9]*)$/); // Split into name and index
+    getUniqueName (fullName, set) {
+        // 1. Split the given name into a (name, index) pair.
+        const nameMatch = fullName.match(/^(.*?)([0-9]*)$/);
+        const [name, nameIndex] = [nameMatch[1], parseInt(nameMatch[2]) || 0];
+
+        // 2. Construct an array: [(name, index), ...], such that each
+        //    name === the 'name' part of the given name's pair.
+        const setNameIndexes = set.map((setFullName) => {
+            const setNameMatch = setFullName.match(/^(.*?)([0-9]*)$/);
+            const [setName, setNameIndex] = [setNameMatch[1], parseInt(setNameMatch[2]) || 0];
 
             // If it matches, return the index. If the index is "", use 0.
-            if (match[1] === name) return parseInt(match[2]) || 0;
+            if (setName === name) return parseInt(setNameIndex) || 0;
             else return null; // If no match, return null
         }).filter(
-            (objNameIndex) => objNameIndex != null // Filter out the nulls
+            (setNameIndex) => setNameIndex != null // Filter out the nulls
         )
 
-        // This table name would be unique
-        if (nameIndexes.length === 0) return name;
+        // RETURN: If this table name would be unique without further
+        // processing, then return it.
+        if (
+            setNameIndexes.length === 0 ||
+            !(setNameIndexes.includes(nameIndex))
+        ) return fullName;
 
-        // Get the next index for this name
-        const suffixIndex = nameIndexes.reduce(
-            (accumMax, nameIndex) => Math.max(accumMax, nameIndex)
-        , 0);
+        // --------------------
 
-        return name + (suffixIndex+1);
+        // 3. Find the lowest unused index from the resulting array.
+        // Source: https://stackoverflow.com/a/30672958
+        setNameIndexes.sort((a,b) => a-b) // Sort numerically
+        var suffixIndex = -1;
+        for (var i = 0; i < setNameIndexes.length; ++i) {
+            if (setNameIndexes[i] !== i) {
+                suffixIndex = i;
+                break;
+            }
+        }
+        if (suffixIndex === -1) {
+            suffixIndex = setNameIndexes[setNameIndexes.length - 1] + 1;
+        }
+
+        // 4. If the index comes out as 0, then remove it completely
+        if (suffixIndex === 0) {
+            suffixIndex = "";
+        }
+
+        // RETURN: Concatenate and return the (now unique) full name.
+        return name + suffixIndex;
     }
 
     createNewTable (tableSpec) {
@@ -71,16 +99,16 @@ export default class App extends React.Component {
 
         // ie. tables.push(), the React-friendly way
         const newTable = Object.assign(
-                // Defaults
-                {
-                    name: "",
-                    settings: {
-                        numRecords: 0
-                    },
-                    fields: []
+            // Defaults
+            {
+                name: "",
+                settings: {
+                    numRecords: 0
                 },
-                // Overwrite with caller's object
-                tableSpec
+                fields: []
+            },
+            // Overwrite with caller's object
+            tableSpec
         );
         const newTables = this.state.tables.concat(newTable);
         this.setState({tables: newTables});
@@ -110,16 +138,16 @@ export default class App extends React.Component {
         }
 
         const newField = Object.assign(
-                // Defaults
-                {
-                    name: "",
-                    settings: {
-                        // TODO: fill this out
-                    }
-                },
-                // Overwrite with caller's object
-                fieldSpec
-            )
+            // Defaults
+            {
+                name: "",
+                settings: {
+                    // TODO: fill this out
+                }
+            },
+            // Overwrite with caller's object
+            fieldSpec
+        )
 
         // ie. tables[tableName].fields.push(), the React-friendly way
         const newTables = this.state.tables.slice();
