@@ -1,43 +1,54 @@
 import React from 'react';
-import ObjectTypes from './object-types';
+import ScrollableTabs from './generics/scrollable-tabs';
 
-import { DropTarget } from 'react-dnd';
-import InteractableTypes from './interactable-types';
-import conditionalJoin from './helpers/conditional-join';
+import ObjectTypesTab from './object-types-tab/object-types-tab';
+import AnotherTab from './object-types-tab/another-tab';
 
-// See https://github.com/react-dnd/react-dnd/issues/330
-@DropTarget([InteractableTypes.TABLE, InteractableTypes.FIELD],
-    {
-        drop (props, monitor) {
-            const item = monitor.getItem();
-            const itemType = monitor.getItemType();
+export default class Panel extends React.Component {
+    constructor (props) {
+        super(props);
 
-            if (itemType === InteractableTypes.TABLE) {
-                props.actions.deleteTable(item.tableName);
-            } else if (itemType === InteractableTypes.FIELD) {
-                props.actions.deleteField(item.tableName, item.fieldName);
+        this.state = {
+            activeTabIndex: 0
+        };
+
+        this.tabInfo = {
+            0: {
+                name: "Object Types",
+                component: ObjectTypesTab,
+                componentProps: []
+            },
+            1: {
+                name: "Another Tab",
+                component: AnotherTab,
+                componentProps: []
+            },
+            2: {
+                name: "Long Object Types Tab",
+                component: ObjectTypesTab,
+                componentProps: []
             }
         }
-    },
-    (connect, monitor) => ({
-        dropTargetNode: connect.dropTarget(),
-        canDrop: monitor.canDrop(),
-        isOver: monitor.isOver()
-    })
-)
-export default class Panel extends React.Component {
+    }
+
     render () {
-        const dropTargetNode = this.props.dropTargetNode;
-        const { canDrop, isOver } = this.props;
-        
-        return dropTargetNode(
-            <div className={conditionalJoin({
-                "panel span span-2 dropzone": true,
-                "dropzone-delete-drag": canDrop,
-                "dropzone-delete-hover": isOver
-            }, " ")}>
-                <ObjectTypes.TableType name="Table" imgSrc="table.png" />
-                <ObjectTypes.FieldType name="Field" imgSrc="field.png" />
+        // Get the name of each tab and create a function to switch to that tab
+        // from the current tabInfo table.
+        const tabInfo = this.tabInfo[this.state.activeTabIndex];
+        const scrollableTabsInfo = Object.entries(this.tabInfo).reduce(
+            (collector, [index, tabInfo]) => {
+                collector.push([
+                    tabInfo.name,
+                    () => { this.setState({activeTabIndex: index}); }
+                ]);
+                return collector;
+            }, []
+        )
+
+        return (
+            <div className="panel span span-2">
+                <ScrollableTabs tabInfo={scrollableTabsInfo} />
+                <tabInfo.component {...tabInfo.componentProps} />
             </div>
         );
     }

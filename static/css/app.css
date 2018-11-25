@@ -13,6 +13,30 @@
     background-color: #808080;
     padding: 10px;
 }
+/*.tabset-scroller {}*/
+.tabset-scroller-button {
+    display: inline-block;
+    vertical-align: top; /* see: https://stackoverflow.com/a/34256639 */
+    padding: 5px;
+    border: 3px outset #C0C0C0;
+    border-radius: 2px;
+    margin: 5px;
+    background-color: #C0C0C0;
+}
+.tabset {
+    display: inline-block;
+    width: 75%; /* FOR THE TIME BEING */
+    margin-bottom: 10px;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    white-space: nowrap;
+}
+.tab {
+    display: inline-block;
+    margin: 1%;
+}
+/*.tab-component {}*/
+
 .workspace {
     height: 100%;
     background-color: #f0f0f0;
@@ -36,6 +60,7 @@
 
 .object-instance-table {
     background-color: #c0c0c0;
+    margin: 5px;
     min-width: 60px;
     min-height: 60px;
 }
