@@ -10,34 +10,23 @@ export default class Panel extends React.Component {
         this.state = {
             activeTabIndex: 0
         };
-
-        this.tabInfo = {
-            0: {
-                name: "Object Types",
-                component: ObjectTypesTab,
-                componentProps: {actions: this.props.actions}
-            }
-        }
     }
 
     render () {
-        // Get the name of each tab and create a function to switch to that tab
-        // from the current tabInfo table.
-        const tabInfo = this.tabInfo[this.state.activeTabIndex];
-        const scrollableTabsInfo = Object.entries(this.tabInfo).reduce(
-            (collector, [index, tabInfo]) => {
-                collector.push([
-                    tabInfo.name,
-                    () => { this.setState({activeTabIndex: index}); }
-                ]);
-                return collector;
-            }, []
-        )
+        const tabs = [
+            [0, "Object Types"]
+        ];
 
+        // Get the name of each tab and create a function to switch to that tab.
+        const tabInfo = tabs.map( ([index, name]) => [
+            name, () => { this.setState({activeTabIndex: index}); }
+        ]);
+
+        const index = this.state.activeTabIndex;
         return (
             <div className="panel span span-2">
-                <ScrollableTabs tabInfo={scrollableTabsInfo} />
-                <tabInfo.component {...tabInfo.componentProps} />
+                <ScrollableTabs tabInfo={tabInfo} />
+                {(index === 0) && <ObjectTypesTab actions={this.state.actions} />}
             </div>
         );
     }
