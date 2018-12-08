@@ -26,7 +26,7 @@ export default class Panel extends React.Component {
         return (
             <div className="panel span span-2">
                 <ScrollableTabs tabInfo={tabInfo} />
-                {(index === 0) && <ObjectTypesTab actions={this.state.actions} />}
+                {(index === 0) && <ObjectTypesTab actions={this.props.actions} />}
             </div>
         );
     }
