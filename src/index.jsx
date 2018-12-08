@@ -10,88 +10,73 @@ import Workspace from './workspace';
 import ResourceManager from './helpers/resource-manager';
 window.resourceManager = new ResourceManager();
 
-@DragDropContext(HTML5Backend)
-export default class App extends React.Component {
-    constructor (props) {
-        super(props);
+/**
+ * Check if name already exists in the given set of names. If it does not,
+ * return name. If it does, then return name suffixed with an incrementing
+ * number to ensure it is unique.
+ * @param {String} name The name to check.
+ * @param {Array} set The set of items that the returned name must be unique
+ * within.
+ * @returns {String} A unique name, within the scope of the given set.
+ */
+function getUniqueName (fullName, set) {
+    // 1. Split the given name into a (name, index) pair.
+    const nameMatch = fullName.match(/^(.*?)([0-9]*)$/);
+    const [name, nameIndex] = [nameMatch[1], parseInt(nameMatch[2]) || 0];
 
-        this.state = {
-            tables: []
-        }
+    // 2. Construct an array: [(name, index), ...], such that each
+    //    name === the 'name' part of the given name's pair.
+    const setNameIndexes = set.map((setFullName) => {
+        const setNameMatch = setFullName.match(/^(.*?)([0-9]*)$/);
+        const [setName, setNameIndex] = [setNameMatch[1], parseInt(setNameMatch[2]) || 0];
 
-        this.actions = {
-            createTable: this.createTable.bind(this),
-            deleteTable: this.deleteTable.bind(this),
+        // If it matches, return the index. If the index is "", use 0.
+        if (setName === name) return parseInt(setNameIndex) || 0;
+        else return null; // If no match, return null
+    }).filter(
+        (setNameIndex) => setNameIndex != null // Filter out the nulls
+    )
 
-            createField: this.createField.bind(this),
-            deleteField: this.deleteField.bind(this),
-            moveField: this.moveField.bind(this)
+    // RETURN: If this table name would be unique without further
+    // processing, then return it.
+    if (
+        setNameIndexes.length === 0 ||
+        !(setNameIndexes.includes(nameIndex))
+    ) return fullName;
+
+    // --------------------
+
+    // 3. Find the lowest unused index from the resulting array.
+    // Source: https://stackoverflow.com/a/30672958
+    setNameIndexes.sort((a,b) => a-b) // Sort numerically
+    var suffixIndex = -1;
+    for (var i = 0; i < setNameIndexes.length; ++i) {
+        if (setNameIndexes[i] !== i) {
+            suffixIndex = i;
+            break;
         }
     }
-
-    /**
-     * Check if name already exists in the given set of items. If it does not,
-     * return name. If it does, then return name suffixed with an incrementing
-     * number to ensure it is unique.
-     * @param {String} name The name to check.
-     * @param {Array} set The set of items that the returned name must be unique
-     * within.
-     * @returns {String} A unique name, within the scope of the given set.
-     */
-    getUniqueName (fullName, set) {
-        // 1. Split the given name into a (name, index) pair.
-        const nameMatch = fullName.match(/^(.*?)([0-9]*)$/);
-        const [name, nameIndex] = [nameMatch[1], parseInt(nameMatch[2]) || 0];
-
-        // 2. Construct an array: [(name, index), ...], such that each
-        //    name === the 'name' part of the given name's pair.
-        const setNameIndexes = set.map((setFullName) => {
-            const setNameMatch = setFullName.match(/^(.*?)([0-9]*)$/);
-            const [setName, setNameIndex] = [setNameMatch[1], parseInt(setNameMatch[2]) || 0];
-
-            // If it matches, return the index. If the index is "", use 0.
-            if (setName === name) return parseInt(setNameIndex) || 0;
-            else return null; // If no match, return null
-        }).filter(
-            (setNameIndex) => setNameIndex != null // Filter out the nulls
-        )
-
-        // RETURN: If this table name would be unique without further
-        // processing, then return it.
-        if (
-            setNameIndexes.length === 0 ||
-            !(setNameIndexes.includes(nameIndex))
-        ) return fullName;
-
-        // --------------------
-
-        // 3. Find the lowest unused index from the resulting array.
-        // Source: https://stackoverflow.com/a/30672958
-        setNameIndexes.sort((a,b) => a-b) // Sort numerically
-        var suffixIndex = -1;
-        for (var i = 0; i < setNameIndexes.length; ++i) {
-            if (setNameIndexes[i] !== i) {
-                suffixIndex = i;
-                break;
-            }
-        }
-        if (suffixIndex === -1) {
-            suffixIndex = setNameIndexes[setNameIndexes.length - 1] + 1;
-        }
-
-        // 4. If the index comes out as 0, then remove it completely
-        if (suffixIndex === 0) {
-            suffixIndex = "";
-        }
-
-        // RETURN: Concatenate and return the (now unique) full name.
-        return name + suffixIndex;
+    if (suffixIndex === -1) {
+        suffixIndex = setNameIndexes[setNameIndexes.length - 1] + 1;
     }
 
+    // 4. If the index comes out as 0, then remove it completely
+    if (suffixIndex === 0) {
+        suffixIndex = "";
+    }
+
+    // RETURN: Concatenate and return the (now unique) full name.
+    return name + suffixIndex;
+}
+
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// WARNING: DO NOT USE THIS THESE STAND-ALONE - they must be bound to App's 'this'
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+objectOperations = {
     createTable (tableSpec) {
         // Ensure that the name is unique
         if ("name" in tableSpec) {
-            tableSpec.name = this.getUniqueName(tableSpec.name,
+            tableSpec.name = getUniqueName(tableSpec.name,
                 this.state.tables.map((table) => table.name)
             )
         }
@@ -111,13 +96,13 @@ export default class App extends React.Component {
         );
         const newTables = this.state.tables.concat(newTable);
         this.setState({tables: newTables});
-    }
+    },
 
     deleteTable (name) {
         // Filter out the given table
         const newTables = this.state.tables.filter((table) => (table.name !== name));
         this.setState({tables: newTables});
-    }
+    },
 
     createField(tableName, fieldSpec) {
         // Ensure the table exists (this should never fail, but you never know)
@@ -131,7 +116,7 @@ export default class App extends React.Component {
         // Ensure that the name is unique in this table
         if ("name" in fieldSpec) {
             const table = this.state.tables.find((table) => table.name === tableName)
-            fieldSpec.name = this.getUniqueName(fieldSpec.name,
+            fieldSpec.name = getUniqueName(fieldSpec.name,
                 table.fields.map((field) => field.name)
             )
         }
@@ -155,18 +140,41 @@ export default class App extends React.Component {
         table.fields = table.fields.concat(newField);
 
         this.setState({tables: newTables});
-    }
+    },
 
     deleteField (tableName, fieldName) {
+        // Ensure the table exists (this should never fail, but you never know)
+        const tableNames = this.state.tables.map((table) => table.name);
+        const tableExists = Boolean(tableNames.find((checkTableName) => checkTableName === tableName));
+        if (!tableExists) {
+            throw Error("No such table '"+tableName+"'");
+        }
+
+        // Remove the field
         const newTables = this.state.tables.slice();
         const tableIndex = newTables.findIndex((table) => table.name === tableName);
         const table = newTables[tableIndex] = Object.assign({}, newTables[tableIndex]);
         table.fields = table.fields.filter((field) => field.name !== fieldName);
 
         this.setState({tables: newTables});
-    }
+    },
 
     moveField(fieldName, fromTableName, toTableName) {
+        // Ensure the 'from' and 'to' tables exist (this should never fail, but you never know)
+        const tableNames = this.state.tables.map((table) => table.name);
+        const tableExists;
+        
+        tableExists = Boolean(tableNames.find((checkTableName) => checkTableName === fromTableName));
+        if (!tableExists) {
+            throw Error("No such table '"+fromTableName+"'");
+        }
+
+        tableExists = Boolean(tableNames.find((checkTableName) => checkTableName === toTableName));
+        if (!tableExists) {
+            throw Error("No such table '"+toTableName+"'");
+        }
+
+        // From here, *some* field will be moved *somewhere*
         const newTables = this.state.tables.slice();
 
         // Move the field to the end of the same table
@@ -199,7 +207,7 @@ export default class App extends React.Component {
             const field = Object.assign({}, fromTable.fields[fieldIndex]);
 
             // Ensure that the name is unique in toTable
-            field.name = this.getUniqueName(field.name,
+            field.name = getUniqueName(field.name,
                 toTable.fields.map((field) => field.name)
             )
 
@@ -209,6 +217,26 @@ export default class App extends React.Component {
         }
 
         this.setState({tables: newTables});
+    }
+}
+
+@DragDropContext(HTML5Backend)
+export default class App extends React.Component {
+    constructor (props) {
+        super(props);
+
+        this.state = {
+            tables: []
+        }
+
+        this.actions = {
+            createTable: objectOperations.createTable.bind(this),
+            deleteTable: objectOperations.deleteTable.bind(this),
+
+            createField: objectOperations.createField.bind(this),
+            deleteField: objectOperations.deleteField.bind(this),
+            moveField: objectOperations.moveField.bind(this)
+        }
     }
 
     render () {
