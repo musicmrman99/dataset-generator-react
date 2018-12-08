@@ -1,5 +1,5 @@
 import React from 'react';
-import ObjectTypes from './object-types';
+import ObjectTypes from './object-types/object-types';
 
 import { DropTarget } from 'react-dnd';
 import InteractableTypes from '../interactable-types';
@@ -29,7 +29,7 @@ export default class ObjectTypesTab extends React.Component {
     render () {
         const dropTargetNode = this.props.dropTargetNode;
         const { canDrop, isOver } = this.props;
-        
+
         return dropTargetNode(
             <div className={conditionalJoin({
                 "tab-component dropzone": true,

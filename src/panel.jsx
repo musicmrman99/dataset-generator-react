@@ -1,8 +1,7 @@
 import React from 'react';
-import ScrollableTabs from './generics/scrollable-tabs';
 
-import ObjectTypesTab from './object-types-tab/object-types-tab';
-import AnotherTab from './object-types-tab/another-tab';
+import ScrollableTabs from './generics/scrollable-tabs';
+import ObjectTypesTab from './tabs/object-types-tab';
 
 export default class Panel extends React.Component {
     constructor (props) {
@@ -16,17 +15,7 @@ export default class Panel extends React.Component {
             0: {
                 name: "Object Types",
                 component: ObjectTypesTab,
-                componentProps: []
-            },
-            1: {
-                name: "Another Tab",
-                component: AnotherTab,
-                componentProps: []
-            },
-            2: {
-                name: "Long Object Types Tab",
-                component: ObjectTypesTab,
-                componentProps: []
+                componentProps: {}
             }
         }
     }

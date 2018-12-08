@@ -2,7 +2,7 @@ import React from 'react';
 import ObjectType from './object-type';
 
 import { DragSource } from 'react-dnd';
-import InteractableTypes from '../interactable-types';
+import InteractableTypes from '../../interactable-types';
 
 // This is basically a 'class factory'
 export default Object.freeze(

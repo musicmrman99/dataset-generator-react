@@ -8,12 +8,10 @@ export default class Repeater {
         this.timerID = null;
     }
 
-    // Garunteed to execute fn() at least once
     start () {
         this.timerID = setInterval(this.fn, this.every);
     }
 
-    // FIXME: this is not firing
     stop () {
         clearInterval(this.timerID);
     }
