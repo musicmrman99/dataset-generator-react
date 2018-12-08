@@ -15,7 +15,7 @@ export default class Panel extends React.Component {
             0: {
                 name: "Object Types",
                 component: ObjectTypesTab,
-                componentProps: {}
+                componentProps: {actions: this.props.actions}
             }
         }
     }
