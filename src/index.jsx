@@ -72,7 +72,7 @@ function getUniqueName (fullName, set) {
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // WARNING: DO NOT USE THIS THESE STAND-ALONE - they must be bound to App's 'this'
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-objectOperations = {
+const objectOperations = Object.freeze({
     createTable (tableSpec) {
         // Ensure that the name is unique
         if ("name" in tableSpec) {
@@ -162,7 +162,7 @@ objectOperations = {
     moveField(fieldName, fromTableName, toTableName) {
         // Ensure the 'from' and 'to' tables exist (this should never fail, but you never know)
         const tableNames = this.state.tables.map((table) => table.name);
-        const tableExists;
+        var tableExists;
         
         tableExists = Boolean(tableNames.find((checkTableName) => checkTableName === fromTableName));
         if (!tableExists) {
@@ -218,7 +218,7 @@ objectOperations = {
 
         this.setState({tables: newTables});
     }
-}
+});
 
 @DragDropContext(HTML5Backend)
 export default class App extends React.Component {
