@@ -2,7 +2,7 @@ import React from 'react';
 import ObjectTypes from './object-types/object-types';
 
 import { DropTarget } from 'react-dnd';
-import InteractableTypes from '../interactable-types';
+import { InteractableTypes } from '../types';
 import conditionalJoin from '../helpers/conditional-join';
 
 // See https://github.com/react-dnd/react-dnd/issues/330

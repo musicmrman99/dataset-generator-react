@@ -7,6 +7,8 @@ import HTML5Backend from 'react-dnd-html5-backend';
 import Panel from './panel';
 import Workspace from './workspace';
 
+import { ObjectTypes } from './types';
+import pathHelpers from './helpers/path';
 import ResourceManager from './helpers/resource-manager';
 window.resourceManager = new ResourceManager();
 
@@ -69,6 +71,25 @@ function getUniqueName (fullName, set) {
     return name + suffixIndex;
 }
 
+const assert = Object.freeze({
+    // Ensure the table exists (this should never fail, but you never know)
+    tableExists (tables, tableName) {
+        const tableExists = Boolean(tables.find((checkTable) => checkTable.name === tableName));
+        if (!tableExists) {
+            throw Error("No such table '"+tableName+"'");
+        }
+    },
+
+    // Ensure the given field in the given table exists (this should never fail, but you never know)
+    fieldExists (tables, tableName, fieldName) {
+        const table = tables.find((table) => table.name === tableName);
+        const fieldExists = Boolean(table.fields.find((checkField) => checkField.name === fieldName));
+        if (!fieldExists) {
+            throw Error("No such field '"+fieldName+"'");
+        }
+    }
+});
+
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // WARNING: DO NOT USE THIS THESE STAND-ALONE - they must be bound to App's 'this'
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -99,6 +120,8 @@ const objectOperations = Object.freeze({
     },
 
     deleteTable (name) {
+        assert.tableExists(this.state.tables, name)
+
         // Filter out the given table
         const newTables = this.state.tables.filter((table) => (table.name !== name));
         this.setState({tables: newTables});
@@ -106,12 +129,7 @@ const objectOperations = Object.freeze({
 
     createField(tableName, fieldSpec) {
         // Ensure the table exists (this should never fail, but you never know)
-        const tableNames = this.state.tables.map((table) => table.name);
-        const tableExists = Boolean(tableNames.find((checkTableName) => checkTableName === tableName));
-        if (!tableExists) {
-            // If tableName === undefined, I laugh at you.
-            throw Error("No such table '"+tableName+"'");
-        }
+        assert.tableExists(this.state.tables, tableName)
 
         // Ensure that the name is unique in this table
         if ("name" in fieldSpec) {
@@ -144,11 +162,8 @@ const objectOperations = Object.freeze({
 
     deleteField (tableName, fieldName) {
         // Ensure the table exists (this should never fail, but you never know)
-        const tableNames = this.state.tables.map((table) => table.name);
-        const tableExists = Boolean(tableNames.find((checkTableName) => checkTableName === tableName));
-        if (!tableExists) {
-            throw Error("No such table '"+tableName+"'");
-        }
+        assert.tableExists(this.state.tables, tableName);
+        assert.fieldExists(this.state.tables, tableName, fieldName);
 
         // Remove the field
         const newTables = this.state.tables.slice();
@@ -160,19 +175,9 @@ const objectOperations = Object.freeze({
     },
 
     moveField(fieldName, fromTableName, toTableName) {
-        // Ensure the 'from' and 'to' tables exist (this should never fail, but you never know)
-        const tableNames = this.state.tables.map((table) => table.name);
-        var tableExists;
-        
-        tableExists = Boolean(tableNames.find((checkTableName) => checkTableName === fromTableName));
-        if (!tableExists) {
-            throw Error("No such table '"+fromTableName+"'");
-        }
-
-        tableExists = Boolean(tableNames.find((checkTableName) => checkTableName === toTableName));
-        if (!tableExists) {
-            throw Error("No such table '"+toTableName+"'");
-        }
+        assert.tableExists(this.state.tables, fromTableName);
+        assert.tableExists(this.state.tables, toTableName);
+        assert.fieldExists(this.state.tables, fromTableName, fieldName);
 
         // From here, *some* field will be moved *somewhere*
         const newTables = this.state.tables.slice();
@@ -220,22 +225,42 @@ const objectOperations = Object.freeze({
     }
 });
 
+const objectPropertiesOperations = Object.freeze({
+    setCurrentObject(objectType, objectPath) {
+        const path = pathHelpers.split_path(objectPath);
+        const [tableName, fieldName] = path; // some of these may be 'undefined'
+
+        if (objectType === ObjectTypes.TABLE || objectType === ObjectTypes.FIELD) {
+            assert.tableExists(this.state.tables, tableName);
+        }
+        if (objectType === ObjectTypes.FIELD) {
+            assert.fieldExists(this.state.tables, tableName, fieldName);
+        }
+
+        this.setState({
+            currentObject: {type: objectType, path: path}
+        });
+    }
+});
+
 @DragDropContext(HTML5Backend)
 export default class App extends React.Component {
     constructor (props) {
         super(props);
 
         this.state = {
-            tables: []
+            tables: [],
+            currentObject: {type: null, path: null}
         }
 
         this.actions = {
             createTable: objectOperations.createTable.bind(this),
             deleteTable: objectOperations.deleteTable.bind(this),
-
             createField: objectOperations.createField.bind(this),
             deleteField: objectOperations.deleteField.bind(this),
-            moveField: objectOperations.moveField.bind(this)
+            moveField: objectOperations.moveField.bind(this),
+
+            setCurrentObject: objectPropertiesOperations.setCurrentObject.bind(this)
         }
     }
 

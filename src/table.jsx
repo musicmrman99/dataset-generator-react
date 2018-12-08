@@ -2,7 +2,7 @@ import React from 'react';
 import Field from './field';
 
 import { DragSource, DropTarget } from 'react-dnd';
-import InteractableTypes from './interactable-types';
+import { InteractableTypes, ObjectTypes } from './types';
 import conditionalJoin from './helpers/conditional-join';
 
 @DragSource(InteractableTypes.TABLE,
@@ -45,7 +45,12 @@ export default class Table extends React.Component {
                 tableName={this.props.name} actions={this.props.actions} />)
 
         return dragSourceNode(
-            <div className="object-instance-table">
+            <div className="object-instance-table" onClick={
+                (event) => {
+                    event.stopPropagation();
+                    this.props.actions.setCurrentObject(ObjectTypes.TABLE, this.props.name);
+                }
+            }>
                 <span>Name: tbl{this.props.name}</span>
                 <p>Settings: {JSON.stringify(this.props.settings)}</p>
                 <hr />

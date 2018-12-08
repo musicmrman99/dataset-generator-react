@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { DragSource } from 'react-dnd';
-import InteractableTypes from './interactable-types';
+import { InteractableTypes, ObjectTypes } from './types';
 
 @DragSource(InteractableTypes.FIELD,
     {
@@ -18,7 +18,12 @@ export default class Field extends React.Component {
     render () {
         const dragSourceNode = this.props.dragSourceNode;
         return dragSourceNode(
-            <div className="object-instance-field">
+            <div className="object-instance-field" onClick={
+                (event) => {
+                    event.stopPropagation();
+                    this.props.actions.setCurrentObject(ObjectTypes.FIELD, [this.props.tableName, this.props.name].join("/"));
+                }
+            }>
                 <span>Name: {this.props.name}</span>
                 <p>Settings: {JSON.stringify(this.props.settings)}</p>
             </div>
