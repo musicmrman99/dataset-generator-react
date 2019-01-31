@@ -1,5 +1,5 @@
 import React from 'react';
-import ObjectTypes from './object-types/object-types';
+import { ObjectTypeDraggable } from './object-types/object-type-draggable';
 
 import { DropTarget } from 'react-dnd';
 import { InteractableTypes } from '../types';
@@ -30,14 +30,17 @@ export default class ObjectTypesTab extends React.Component {
         const dropTargetNode = this.props.dropTargetNode;
         const { canDrop, isOver } = this.props;
 
+        const TableType = ObjectTypeDraggable(InteractableTypes.TABLE_TYPE);
+        const FieldType = ObjectTypeDraggable(InteractableTypes.FIELD_TYPE);
+
         return dropTargetNode(
             <div className={conditionalJoin({
                 "tab-component dropzone": true,
                 "dropzone-delete-drag": canDrop,
                 "dropzone-delete-hover": isOver
             }, " ")}>
-                <ObjectTypes.TableType name="Table" imgSrc="table.png" />
-                <ObjectTypes.FieldType name="Field" imgSrc="field.png" />
+                <TableType name="Table" imgSrc="table.png" />
+                <FieldType name="Field" imgSrc="field.png" />
             </div>
         );
     }
