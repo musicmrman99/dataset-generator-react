@@ -1,9 +1,10 @@
 import React from 'react';
+import { DragSource } from 'react-dnd';
 
 // NOTE: This module assumes that 'resourceManager' is global.
 //       This is likely to be set in index.jsx
 
-export default class ObjectType extends React.Component {
+export class ObjectConstructor extends React.Component {
     constructor (props) {
         super(props);
 
@@ -35,4 +36,27 @@ export default class ObjectType extends React.Component {
             </div>
         );
     }
+}
+
+export function ObjectConstructorDraggable (objectConstructorDndType) {
+    @DragSource(objectConstructorDndType,
+        {
+            beginDrag (props) {
+                return {};
+            }
+        },
+        (connect, monitor) => ({ dragSourceNode: connect.dragSource() })
+    )
+    class _ObjectConstructorDraggable extends React.Component {
+        render () {
+            const dragSourceNode = this.props.dragSourceNode;
+            return dragSourceNode(
+                <div>
+                    <ObjectConstructor name={this.props.name} imgSrc={this.props.imgSrc} />
+                </div>
+            );
+        }
+    }
+
+    return _ObjectConstructorDraggable;
 }

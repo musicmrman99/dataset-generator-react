@@ -1,6 +1,6 @@
 export const InteractableTypes = Object.freeze({
-    TABLE_TYPE: "TableType",
-    FIELD_TYPE: "FieldType",
+    TABLE_CONSTRUCTOR: "TableConstructor",
+    FIELD_CONSTRUCTOR: "FieldConstructor",
     TABLE: "Table",
     FIELD: "Field"
 });

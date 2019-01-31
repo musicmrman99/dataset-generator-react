@@ -13,11 +13,11 @@ import conditionalJoin from './helpers/conditional-join';
     },
     (connect, monitor) => ({ dragSourceNode: connect.dragSource() })
 )
-@DropTarget([InteractableTypes.FIELD_TYPE, InteractableTypes.FIELD],
+@DropTarget([InteractableTypes.FIELD_CONSTRUCTOR, InteractableTypes.FIELD],
     {
         drop (props, monitor) {
             const itemType = monitor.getItemType();
-            if (itemType === InteractableTypes.FIELD_TYPE) {
+            if (itemType === InteractableTypes.FIELD_CONSTRUCTOR) {
                 props.actions.createField(props.name, {name: "NewField"});
             } else if (itemType === InteractableTypes.FIELD) {
                 const item = monitor.getItem();
@@ -57,8 +57,8 @@ export default class Table extends React.Component {
                 {dropTargetNode(
                     <div className={conditionalJoin({
                         "object-instance-table-fields dropzone": true,
-                        "dropzone-create-drag": (canDrop && sourceType === InteractableTypes.FIELD_TYPE),
-                        "dropzone-create-hover": (isOver && sourceType === InteractableTypes.FIELD_TYPE),
+                        "dropzone-create-drag": (canDrop && sourceType === InteractableTypes.FIELD_CONSTRUCTOR),
+                        "dropzone-create-hover": (isOver && sourceType === InteractableTypes.FIELD_CONSTRUCTOR),
                         "dropzone-move-drag": (canDrop && sourceType === InteractableTypes.FIELD),
                         "dropzone-move-hover": (isOver && sourceType === InteractableTypes.FIELD)
                     }, " ")}>

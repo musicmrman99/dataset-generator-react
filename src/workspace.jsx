@@ -5,7 +5,7 @@ import { DropTarget } from 'react-dnd';
 import { InteractableTypes } from './types';
 import conditionalJoin from './helpers/conditional-join';
 
-@DropTarget(InteractableTypes.TABLE_TYPE,
+@DropTarget(InteractableTypes.TABLE_CONSTRUCTOR,
     {
         drop (props, monitor) {
             props.actions.createTable({ name: "NewTable" });
