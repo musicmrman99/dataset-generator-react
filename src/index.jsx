@@ -221,7 +221,7 @@ const objectOperations = Object.freeze({
     }
 });
 
-const objectPropertiesOperations = Object.freeze({
+const currentObjectManagement = Object.freeze({
     setCurrentObject(objectType, objectPath) {
         const path = pathHelpers.split_path(objectPath);
         const [tableName, fieldName] = path; // some of these may be 'undefined'
@@ -234,8 +234,33 @@ const objectPropertiesOperations = Object.freeze({
         }
 
         this.setState({
-            currentObject: {type: objectType, path: path}
+            currentObject: Object.freeze({type: objectType, path: path})
         });
+    },
+
+    getCurrentObject() {
+        return this.state.currentObject;
+    },
+
+    resolveCurrentObject() {
+        const curObjInfo = this.state.currentObject;
+
+        const recognisedTypes = [ObjectTypes.TABLE, ObjectTypes.FIELD];
+        if (!recognisedTypes.some(type => type === curObjInfo.type)) {
+            return null;
+        }
+
+        // It's always going to need to dereference the table part.
+        const tableIndex = this.state.tables.findIndex(
+            (table) => table.name === curObjInfo.path[0]);
+        const table = this.state.tables[tableIndex];
+        if (curObjInfo.type === ObjectTypes.TABLE) return table;
+
+        // Next, dereference the field
+        const fieldIndex = table.fields.findIndex(
+            (field) => field.name === curObjInfo.path[1]);
+        const field = table.fields[fieldIndex];
+        if (curObjInfo.type === ObjectTypes.FIELD) return field;
     }
 });
 
@@ -256,7 +281,9 @@ export default class App extends React.Component {
             deleteField: objectOperations.deleteField.bind(this),
             moveField: objectOperations.moveField.bind(this),
 
-            setCurrentObject: objectPropertiesOperations.setCurrentObject.bind(this)
+            setCurrentObject: currentObjectManagement.setCurrentObject.bind(this),
+            getCurrentObject: currentObjectManagement.getCurrentObject.bind(this),
+            resolveCurrentObject: currentObjectManagement.resolveCurrentObject.bind(this)
         }
     }
 
