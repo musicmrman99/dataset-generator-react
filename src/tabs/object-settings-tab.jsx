@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default class ObjectPropertiesTab extends React.Component {
+export default class ObjectSettingsTab extends React.Component {
     render () {
         const curObj = this.props.actions.resolveCurrentObject();
         let settingsGraphical = null
