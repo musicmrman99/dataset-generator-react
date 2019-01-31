@@ -7,7 +7,7 @@ import HTML5Backend from 'react-dnd-html5-backend';
 import Panel from './panel';
 import Workspace from './workspace';
 
-import { ObjectTypes } from './types';
+import { ObjectTypes, ObjectTypesSettings } from './types';
 import pathHelpers from './helpers/path';
 import ResourceManager from './helpers/resource-manager';
 window.resourceManager = new ResourceManager();
@@ -91,9 +91,24 @@ const assert = Object.freeze({
 });
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// WARNING: DO NOT USE THIS THESE STAND-ALONE - they must be bound to App's 'this'
+// WARNING: DO NOT USE NON-PRIVATE METHODS STAND-ALONE
+// - non-private methods must be bound to App's 'this'
+// - private methods must be called in the style:
+//     objectOperations._privateMethod()
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 const objectOperations = Object.freeze({
+    _createObject(type, spec) {
+        return Object.assign(
+            // Defaults
+            {
+                name: "",
+                settings: JSON.parse(JSON.stringify(ObjectTypesSettings[type]))
+            },
+            // Overwrite with caller's object
+            spec
+        );
+    },
+
     createTable (tableSpec) {
         // Ensure that the name is unique
         if ("name" in tableSpec) {
@@ -103,18 +118,10 @@ const objectOperations = Object.freeze({
         }
 
         // ie. tables.push(), the React-friendly way
-        const newTable = Object.assign(
-            // Defaults
-            {
-                name: "",
-                settings: {
-                    numRecords: 0
-                },
+        const newTable = objectOperations._createObject(ObjectTypes.TABLE,
+            Object.assign({ // Additional things required by a table object
                 fields: []
-            },
-            // Overwrite with caller's object
-            tableSpec
-        );
+            }, tableSpec));
         const newTables = this.state.tables.concat(newTable);
         this.setState({tables: newTables});
     },
@@ -139,19 +146,8 @@ const objectOperations = Object.freeze({
             )
         }
 
-        const newField = Object.assign(
-            // Defaults
-            {
-                name: "",
-                settings: {
-                    // TODO: fill this out
-                }
-            },
-            // Overwrite with caller's object
-            fieldSpec
-        )
-
         // ie. tables[tableName].fields.push(), the React-friendly way
+        const newField = objectOperations._createObject(ObjectTypes.FIELD, fieldSpec);
         const newTables = this.state.tables.slice();
         const tableIndex = newTables.findIndex((table) => table.name === tableName);
         const table = newTables[tableIndex] = Object.assign({}, newTables[tableIndex]);
