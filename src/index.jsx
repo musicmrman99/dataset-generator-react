@@ -318,12 +318,59 @@ const objectPropertiesOperations = Object.freeze({
         this.setState({tables: newTables});
     },
 
+    _updateFieldName(tableName, fieldName, newName) {
+        assert.tableExists(this.state.tables, tableName);
+        assert.fieldExists(this.state.tables, tableName, fieldName);
+
+        const newTables = this.state.tables.slice();
+
+        const tableIndex = newTables.findIndex((table) => table.name === tableName);
+        const table = newTables[tableIndex] = Object.assign({}, newTables[tableIndex]);
+
+        // Ensure that the new name is unique in this table
+        newName = getUniqueName(newName,
+            table.fields.map((field) => field.name)
+        )
+
+        table.fields = table.fields.slice();
+        const fieldIndex = table.fields.findIndex((field) => field.name === fieldName);
+        const field = table.fields[fieldIndex] = Object.assign({}, table.fields[fieldIndex]);
+        field.name = newName;
+
+        this.setState({tables: newTables});
+    },
+
+    _updateFieldSettings(tableName, fieldName, newSettings) {
+        assert.tableExists(this.state.tables, tableName);
+        assert.fieldExists(this.state.tables, tableName, fieldName);
+
+        const newTables = this.state.tables.slice();
+
+        const tableIndex = newTables.findIndex((table) => table.name === tableName);
+        const table = newTables[tableIndex] = Object.assign({}, newTables[tableIndex]);
+
+        table.fields = table.fields.slice();
+        const fieldIndex = table.fields.findIndex((field) => field.name === fieldName);
+        const field = table.fields[fieldIndex] = Object.assign({}, table.fields[fieldIndex]);
+
+        field.settings = objectPropertiesOperations._mergeObjectSettings(
+            ObjectTypes.FIELD, field.settings, newSettings);
+
+        this.setState({tables: newTables});
+    },
+
     updateObjectName(objInfo, newName) {
         // FIXME: Just do it the hacky way for now
         switch (objInfo.type) {
             case ObjectTypes.TABLE:
                 objectPropertiesOperations._updateTableName.apply(
                     this, [objInfo.path[0], newName]);
+                break;
+
+            case ObjectTypes.FIELD:
+                objectPropertiesOperations._updateFieldName.apply(
+                    this, [objInfo.path[0], objInfo.path[1], newName]);
+                break;
         }
     },
 
@@ -333,6 +380,12 @@ const objectPropertiesOperations = Object.freeze({
             case ObjectTypes.TABLE:
                 objectPropertiesOperations._updateTableSettings.apply(
                     this, [objInfo.path[0], newSettings]);
+                break;
+
+            case ObjectTypes.FIELD:
+                objectPropertiesOperations._updateFieldSettings.apply(
+                    this, [objInfo.path[0], objInfo.path[1], newSettings]);
+                break;
         }
     }
 });
