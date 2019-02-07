@@ -7,7 +7,7 @@ import HTML5Backend from 'react-dnd-html5-backend';
 import Panel from './panel';
 import Workspace from './workspace';
 
-import { ObjectTypes, ObjectTypesSettings } from './types';
+import { ObjectTypes, ObjectSettingsDefs } from './types';
 import pathHelpers from './helpers/path';
 import ResourceManager from './helpers/resource-manager';
 window.resourceManager = new ResourceManager();
@@ -102,7 +102,7 @@ const objectOperations = Object.freeze({
             // Defaults
             {
                 name: "",
-                settings: JSON.parse(JSON.stringify(ObjectTypesSettings[type]))
+                settings: JSON.parse(JSON.stringify(ObjectSettingsDefs[type].defaults))
             },
             // Overwrite with caller's object
             spec
