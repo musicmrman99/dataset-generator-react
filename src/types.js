@@ -46,14 +46,21 @@ export const ObjectSettingsDefs = Object.freeze({
             numRecords: {
                 type: "number",
                 attrs: {
-                    "min": 1
+                    "min": 1 // Not a good garuntee
                 }
             }
         },
 
         validators: {
             numRecords (inp) {
-                return parseInt(inp);
+                const val = parseInt(inp);
+                if (isNaN(val)) {
+                    throw new Error("Invalid value for field 'numRecords': "+val);
+                }
+                if (val < 1) {
+                    throw new Error("Invalid value for field 'numRecords' (below minimum): "+val);
+                }
+                return val;
             }
         }
     },
