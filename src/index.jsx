@@ -264,6 +264,79 @@ const currentObjectManagement = Object.freeze({
     }
 });
 
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// WARNING: DO NOT USE NON-PRIVATE METHODS STAND-ALONE
+// - non-private methods must be bound to App's 'this'
+// - private methods must be called in the style:
+//     objectPropertiesOperations._privateMethod()
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const objectPropertiesOperations = Object.freeze({
+    _mergeObjectSettings(type, oldSettings, newSettings) {
+        // WARNING: The stringify/parse deep-copy approach has its drawbacks
+        const updatedSettings = JSON.parse(JSON.stringify(oldSettings));
+        Object.keys(ObjectSettingsDefs[type].defaults).forEach((setting) => {
+            updatedSettings[setting] = newSettings[setting];
+        });
+        return updatedSettings;
+    },
+
+    _updateTableName(tableName, newName) {
+        // Ensure the table exists (this should never fail, but you never know)
+        const tableNames = this.state.tables.map((table) => table.name);
+        const tableExists = Boolean(tableNames.find((checkTableName) => checkTableName === tableName));
+        if (!tableExists) {
+            throw Error("No such table '"+tableName+"'");
+        }
+
+        // Ensure that the new name is unique
+        newName = getUniqueName(newName,
+            this.state.tables.map((table) => table.name)
+        )
+
+        const newTables = this.state.tables.slice();
+        const tableIndex = newTables.findIndex((table) => table.name === tableName);
+        const table = newTables[tableIndex] = Object.assign({}, newTables[tableIndex]);
+        table.name = newName;
+
+        this.setState({tables: newTables});
+    },
+
+    _updateTableSettings(tableName, newSettings) {
+        // Ensure the table exists (this should never fail, but you never know)
+        const tableNames = this.state.tables.map((table) => table.name);
+        const tableExists = Boolean(tableNames.find((checkTableName) => checkTableName === tableName));
+        if (!tableExists) {
+            throw Error("No such table '"+tableName+"'");
+        }
+
+        const newTables = this.state.tables.slice();
+        const tableIndex = newTables.findIndex((table) => table.name === tableName);
+        const table = newTables[tableIndex] = Object.assign({}, newTables[tableIndex]);
+        table.settings = objectPropertiesOperations._mergeObjectSettings(
+            ObjectTypes.TABLE, table.settings, newSettings)
+
+        this.setState({tables: newTables});
+    },
+
+    updateObjectName(objInfo, newName) {
+        // FIXME: Just do it the hacky way for now
+        switch (objInfo.type) {
+            case ObjectTypes.TABLE:
+                objectPropertiesOperations._updateTableName.apply(
+                    this, [objInfo.path[0], newName]);
+        }
+    },
+
+    updateObjectSettings(objInfo, newSettings) {
+        // FIXME: Just do it the hacky way for now
+        switch (objInfo.type) {
+            case ObjectTypes.TABLE:
+                objectPropertiesOperations._updateTableSettings.apply(
+                    this, [objInfo.path[0], newSettings]);
+        }
+    }
+});
+
 @DragDropContext(HTML5Backend)
 export default class App extends React.Component {
     constructor (props) {
@@ -283,7 +356,10 @@ export default class App extends React.Component {
 
             setCurrentObject: currentObjectManagement.setCurrentObject.bind(this),
             getCurrentObject: currentObjectManagement.getCurrentObject.bind(this),
-            resolveCurrentObject: currentObjectManagement.resolveCurrentObject.bind(this)
+            resolveCurrentObject: currentObjectManagement.resolveCurrentObject.bind(this),
+
+            updateObjectName: objectPropertiesOperations.updateObjectName.bind(this),
+            updateObjectSettings: objectPropertiesOperations.updateObjectSettings.bind(this)
         }
     }
 

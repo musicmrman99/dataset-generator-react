@@ -3,13 +3,8 @@ import React from 'react';
 import { ObjectSettingsDefs } from '../types';
 
 export default class ObjectSettingsTab extends React.Component {
-    updateField (objInfo, setting, newValue) {
-        // TODO: implement this
-        // can use:
-        // - objInfo (if absolutely necessary, objInfo.type, objInfo.path, but
-        //   this should be implemented in index.jsx)
-        // - setting
-        // - newValue
+    updateSetting (objInfo, setting, newValue) {
+        this.props.actions.updateObjectSettings(objInfo, {[setting]: newValue});
     }
 
     render () {
@@ -26,7 +21,7 @@ export default class ObjectSettingsTab extends React.Component {
                     type={inputs[setting].type}
                     value={value}
                     onChange={(event) => {
-                        this.updateField(
+                        this.updateSetting(
                             curObjInfo, setting,
                             validators[setting](event.target.value)
                         )
