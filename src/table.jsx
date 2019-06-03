@@ -52,7 +52,6 @@ export default class Table extends React.Component {
                 }
             }>
                 <span>Name: tbl{this.props.name}</span>
-                <p>Settings: {JSON.stringify(this.props.settings)}</p>
                 <hr />
                 {dropTargetNode(
                     <div className={conditionalJoin({

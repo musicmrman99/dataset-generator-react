@@ -8,6 +8,7 @@ import Panel from './panel';
 import Workspace from './workspace';
 
 import { ObjectTypes, ObjectSettingsDefs } from './types';
+import { Trees, Selectors, TraversalConflictPriority, isSpecialNode } from './helpers/trees';
 import pathHelpers from './helpers/path';
 import ResourceManager from './helpers/resource-manager';
 window.resourceManager = new ResourceManager();
@@ -272,12 +273,23 @@ const currentObjectManagement = Object.freeze({
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 const objectPropertiesOperations = Object.freeze({
     _mergeObjectSettings(type, oldSettings, newSettings) {
-        // WARNING: The stringify/parse deep-copy approach has its drawbacks
-        const updatedSettings = JSON.parse(JSON.stringify(oldSettings));
-        Object.keys(ObjectSettingsDefs[type].defaults).forEach((setting) => {
-            updatedSettings[setting] = newSettings[setting];
-        });
-        return updatedSettings;
+        return Trees.translate(
+            [newSettings, oldSettings, ObjectSettingsDefs[type].defaults],
+            // newSettings and oldSettings must be in the default settings set:
+            (mtn) => !isSpecialNode(mtn[2]),
+            // For each setting, take the first found from: new, old, default
+            Selectors.first,
+            // Construct from an empty object
+            null,
+            {
+                // Conflicts will arise if newSettings is not a full settings
+                // tree. In that case, recurse down the non-leaf nodes from the
+                // old (or default) settings tree. This ensures that all old
+                // settings are kept, regardless of whether newSettings is
+                // incomplete.
+                conflictPriority: TraversalConflictPriority.NON_LEAF
+            }
+        );
     },
 
     _updateTableName(tableName, newName) {

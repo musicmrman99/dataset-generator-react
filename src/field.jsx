@@ -25,7 +25,6 @@ export default class Field extends React.Component {
                 }
             }>
                 <span>Name: {this.props.name}</span>
-                <p>Settings: {JSON.stringify(this.props.settings)}</p>
             </div>
         )
     }
