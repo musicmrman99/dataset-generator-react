@@ -35,7 +35,7 @@ export default class ObjectConstructorsTab extends React.Component {
 
         return dropTargetNode(
             <div className={conditionalJoin({
-                "tab-component dropzone": true,
+                "tab-component border-available": true,
                 "dropzone-delete-drag": canDrop,
                 "dropzone-delete-hover": isOver
             }, " ")}>

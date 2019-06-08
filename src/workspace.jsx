@@ -24,13 +24,14 @@ export default class Workspace extends React.Component {
 
         // About the 'key' prop: https://reactjs.org/docs/lists-and-keys.html
         const tables = this.props.tables.map((table) =>
-            <Table key={table.name}
-                name={table.name} settings={table.settings} fields={table.fields}
+            <Table key={table.name} name={table.name}
+                settings={table.settings} fields={table.fields}
+                currentObject={this.props.currentObject}
                 actions={this.props.actions} />)
 
         return dropTargetNode(
             <div className={conditionalJoin({
-                "workspace span span-10 dropzone": true,
+                "workspace span span-10 border-available": true,
                 "dropzone-create-drag": canDrop,
                 "dropzone-create-hover": isOver
             }, " ")}>

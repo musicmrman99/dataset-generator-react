@@ -432,7 +432,10 @@ export default class App extends React.Component {
         return (
             <div className="content span-container">
                 <Panel tables={this.state.tables} actions={this.actions} />
-                <Workspace tables={this.state.tables} actions={this.actions} />
+                <Workspace
+                    tables={this.state.tables}
+                    currentObject={this.state.currentObject}
+                    actions={this.actions} />
             </div>
         );
     }
