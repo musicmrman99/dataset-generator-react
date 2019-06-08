@@ -222,8 +222,19 @@ const objectOperations = Object.freeze({
     }
 });
 
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// WARNING: DO NOT USE NON-PRIVATE METHODS STAND-ALONE
+// - non-private methods must be bound to App's 'this'
+// - private methods must be called in the style:
+//     currentObjectManagement._privateMethod()
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 const currentObjectManagement = Object.freeze({
     setCurrentObject(objectType, objectPath) {
+        // If objectType is not in ObjectTypes, which should (hopefully) never happen
+        if (!Object.values(ObjectTypes).some((type) => type === objectType)) {
+            throw new Error("Invalid object type (setCurrentObject()): "+objectType);
+        }
+
         const path = pathHelpers.split_path(objectPath);
         const [tableName, fieldName] = path; // some of these may be 'undefined'
 
@@ -239,6 +250,9 @@ const currentObjectManagement = Object.freeze({
         });
     },
 
+    // If someone uses this to edit the current object, then they'll get what
+    // they deserve - a lot of problems. It's called ***GET*** for a reason! :)
+    // (See 'setCurrentObject()' for a safe way)
     getCurrentObject() {
         return this.state.currentObject;
     },
@@ -246,10 +260,8 @@ const currentObjectManagement = Object.freeze({
     resolveCurrentObject() {
         const curObjInfo = this.state.currentObject;
 
-        const recognisedTypes = [ObjectTypes.TABLE, ObjectTypes.FIELD];
-        if (!recognisedTypes.some(type => type === curObjInfo.type)) {
-            return null;
-        }
+        // Don't need to check if the object type in curObjInfo is valid, as
+        // this is checked when it is set.
 
         // It's always going to need to dereference the table part.
         const tableIndex = this.state.tables.findIndex(
