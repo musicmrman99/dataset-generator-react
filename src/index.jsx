@@ -7,166 +7,176 @@ import HTML5Backend from 'react-dnd-html5-backend';
 import Panel from './panel';
 import Workspace from './workspace';
 
+import { ObjectTypes, ObjectSettingsDefs } from './types';
+import { Trees, Selectors, TraversalConflictPriority, isSpecialNode } from './helpers/trees';
+import pathHelpers from './helpers/path';
 import ResourceManager from './helpers/resource-manager';
 window.resourceManager = new ResourceManager();
 
-@DragDropContext(HTML5Backend)
-export default class App extends React.Component {
-    constructor (props) {
-        super(props);
+/**
+ * Check if name already exists in the given set of names. If it does not,
+ * return name. If it does, then return name suffixed with an incrementing
+ * number to ensure it is unique.
+ * @param {String} name The name to check.
+ * @param {Array} set The set of items that the returned name must be unique
+ * within.
+ * @returns {String} A unique name, within the scope of the given set.
+ */
+function getUniqueName (fullName, set) {
+    // 1. Split the given name into a (name, index) pair.
+    const nameMatch = fullName.match(/^(.*?)([0-9]*)$/);
+    const [name, nameIndex] = [nameMatch[1], parseInt(nameMatch[2]) || 0];
 
-        this.state = {
-            tables: []
-        }
+    // 2. Construct an array: [(name, index), ...], such that each
+    //    name === the 'name' part of the given name's pair.
+    const setNameIndexes = set.map((setFullName) => {
+        const setNameMatch = setFullName.match(/^(.*?)([0-9]*)$/);
+        const [setName, setNameIndex] = [setNameMatch[1], parseInt(setNameMatch[2]) || 0];
 
-        this.actions = {
-            createTable: this.createTable.bind(this),
-            deleteTable: this.deleteTable.bind(this),
+        // If it matches, return the index. If the index is "", use 0.
+        if (setName === name) return parseInt(setNameIndex) || 0;
+        else return null; // If no match, return null
+    }).filter(
+        (setNameIndex) => setNameIndex != null // Filter out the nulls
+    )
 
-            createField: this.createField.bind(this),
-            deleteField: this.deleteField.bind(this),
-            moveField: this.moveField.bind(this)
+    // RETURN: If this table name would be unique without further
+    // processing, then return it.
+    if (
+        setNameIndexes.length === 0 ||
+        !(setNameIndexes.includes(nameIndex))
+    ) return fullName;
+
+    // --------------------
+
+    // 3. Find the lowest unused index from the resulting array.
+    // Source: https://stackoverflow.com/a/30672958
+    setNameIndexes.sort((a,b) => a-b) // Sort numerically
+    var suffixIndex = -1;
+    for (var i = 0; i < setNameIndexes.length; ++i) {
+        if (setNameIndexes[i] !== i) {
+            suffixIndex = i;
+            break;
         }
     }
-
-    /**
-     * Check if name already exists in the given set of items. If it does not,
-     * return name. If it does, then return name suffixed with an incrementing
-     * number to ensure it is unique.
-     * @param {String} name The name to check.
-     * @param {Array} set The set of items that the returned name must be unique
-     * within.
-     * @returns {String} A unique name, within the scope of the given set.
-     */
-    getUniqueName (fullName, set) {
-        // 1. Split the given name into a (name, index) pair.
-        const nameMatch = fullName.match(/^(.*?)([0-9]*)$/);
-        const [name, nameIndex] = [nameMatch[1], parseInt(nameMatch[2]) || 0];
-
-        // 2. Construct an array: [(name, index), ...], such that each
-        //    name === the 'name' part of the given name's pair.
-        const setNameIndexes = set.map((setFullName) => {
-            const setNameMatch = setFullName.match(/^(.*?)([0-9]*)$/);
-            const [setName, setNameIndex] = [setNameMatch[1], parseInt(setNameMatch[2]) || 0];
-
-            // If it matches, return the index. If the index is "", use 0.
-            if (setName === name) return parseInt(setNameIndex) || 0;
-            else return null; // If no match, return null
-        }).filter(
-            (setNameIndex) => setNameIndex != null // Filter out the nulls
-        )
-
-        // RETURN: If this table name would be unique without further
-        // processing, then return it.
-        if (
-            setNameIndexes.length === 0 ||
-            !(setNameIndexes.includes(nameIndex))
-        ) return fullName;
-
-        // --------------------
-
-        // 3. Find the lowest unused index from the resulting array.
-        // Source: https://stackoverflow.com/a/30672958
-        setNameIndexes.sort((a,b) => a-b) // Sort numerically
-        var suffixIndex = -1;
-        for (var i = 0; i < setNameIndexes.length; ++i) {
-            if (setNameIndexes[i] !== i) {
-                suffixIndex = i;
-                break;
-            }
-        }
-        if (suffixIndex === -1) {
-            suffixIndex = setNameIndexes[setNameIndexes.length - 1] + 1;
-        }
-
-        // 4. If the index comes out as 0, then remove it completely
-        if (suffixIndex === 0) {
-            suffixIndex = "";
-        }
-
-        // RETURN: Concatenate and return the (now unique) full name.
-        return name + suffixIndex;
+    if (suffixIndex === -1) {
+        suffixIndex = setNameIndexes[setNameIndexes.length - 1] + 1;
     }
+
+    // 4. If the index comes out as 0, then remove it completely
+    if (suffixIndex === 0) {
+        suffixIndex = "";
+    }
+
+    // RETURN: Concatenate and return the (now unique) full name.
+    return name + suffixIndex;
+}
+
+const assert = Object.freeze({
+    // Ensure the table exists (this should never fail, but you never know)
+    tableExists (tables, tableName) {
+        const tableExists = Boolean(tables.find((checkTable) => checkTable.name === tableName));
+        if (!tableExists) {
+            throw Error("No such table '"+tableName+"'");
+        }
+    },
+
+    // Ensure the given field in the given table exists (this should never fail, but you never know)
+    fieldExists (tables, tableName, fieldName) {
+        const table = tables.find((table) => table.name === tableName);
+        const fieldExists = Boolean(table.fields.find((checkField) => checkField.name === fieldName));
+        if (!fieldExists) {
+            throw Error("No such field '"+fieldName+"'");
+        }
+    }
+});
+
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// WARNING: DO NOT USE NON-PRIVATE METHODS STAND-ALONE
+// - non-private methods must be bound to App's 'this'
+// - private methods must be called in the style:
+//     objectOperations._privateMethod()
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const objectOperations = Object.freeze({
+    _createObject(type, spec) {
+        return Object.assign(
+            // Defaults
+            {
+                name: "",
+                settings: JSON.parse(JSON.stringify(ObjectSettingsDefs[type].defaults))
+            },
+            // Overwrite with caller's object
+            spec
+        );
+    },
 
     createTable (tableSpec) {
         // Ensure that the name is unique
         if ("name" in tableSpec) {
-            tableSpec.name = this.getUniqueName(tableSpec.name,
+            tableSpec.name = getUniqueName(tableSpec.name,
                 this.state.tables.map((table) => table.name)
             )
         }
 
         // ie. tables.push(), the React-friendly way
-        const newTable = Object.assign(
-            // Defaults
-            {
-                name: "",
-                settings: {
-                    numRecords: 0
-                },
+        const newTable = objectOperations._createObject(ObjectTypes.TABLE,
+            Object.assign({ // Additional things required by a table object
                 fields: []
-            },
-            // Overwrite with caller's object
-            tableSpec
-        );
+            }, tableSpec));
         const newTables = this.state.tables.concat(newTable);
         this.setState({tables: newTables});
-    }
+    },
 
     deleteTable (name) {
+        assert.tableExists(this.state.tables, name)
+
         // Filter out the given table
         const newTables = this.state.tables.filter((table) => (table.name !== name));
         this.setState({tables: newTables});
-    }
+    },
 
     createField(tableName, fieldSpec) {
         // Ensure the table exists (this should never fail, but you never know)
-        const tableNames = this.state.tables.map((table) => table.name);
-        const tableExists = Boolean(tableNames.find((checkTableName) => checkTableName === tableName));
-        if (!tableExists) {
-            // If tableName === undefined, I laugh at you.
-            throw Error("No such table '"+tableName+"'");
-        }
+        assert.tableExists(this.state.tables, tableName)
 
         // Ensure that the name is unique in this table
         if ("name" in fieldSpec) {
             const table = this.state.tables.find((table) => table.name === tableName)
-            fieldSpec.name = this.getUniqueName(fieldSpec.name,
+            fieldSpec.name = getUniqueName(fieldSpec.name,
                 table.fields.map((field) => field.name)
             )
         }
 
-        const newField = Object.assign(
-            // Defaults
-            {
-                name: "",
-                settings: {
-                    // TODO: fill this out
-                }
-            },
-            // Overwrite with caller's object
-            fieldSpec
-        )
-
         // ie. tables[tableName].fields.push(), the React-friendly way
+        const newField = objectOperations._createObject(ObjectTypes.FIELD, fieldSpec);
         const newTables = this.state.tables.slice();
         const tableIndex = newTables.findIndex((table) => table.name === tableName);
         const table = newTables[tableIndex] = Object.assign({}, newTables[tableIndex]);
         table.fields = table.fields.concat(newField);
 
         this.setState({tables: newTables});
-    }
+    },
 
     deleteField (tableName, fieldName) {
+        // Ensure the table exists (this should never fail, but you never know)
+        assert.tableExists(this.state.tables, tableName);
+        assert.fieldExists(this.state.tables, tableName, fieldName);
+
+        // Remove the field
         const newTables = this.state.tables.slice();
         const tableIndex = newTables.findIndex((table) => table.name === tableName);
         const table = newTables[tableIndex] = Object.assign({}, newTables[tableIndex]);
         table.fields = table.fields.filter((field) => field.name !== fieldName);
 
         this.setState({tables: newTables});
-    }
+    },
 
     moveField(fieldName, fromTableName, toTableName) {
+        assert.tableExists(this.state.tables, fromTableName);
+        assert.tableExists(this.state.tables, toTableName);
+        assert.fieldExists(this.state.tables, fromTableName, fieldName);
+
+        // From here, *some* field will be moved *somewhere*
         const newTables = this.state.tables.slice();
 
         // Move the field to the end of the same table
@@ -199,7 +209,7 @@ export default class App extends React.Component {
             const field = Object.assign({}, fromTable.fields[fieldIndex]);
 
             // Ensure that the name is unique in toTable
-            field.name = this.getUniqueName(field.name,
+            field.name = getUniqueName(field.name,
                 toTable.fields.map((field) => field.name)
             )
 
@@ -209,6 +219,213 @@ export default class App extends React.Component {
         }
 
         this.setState({tables: newTables});
+    }
+});
+
+const currentObjectManagement = Object.freeze({
+    setCurrentObject(objectType, objectPath) {
+        const path = pathHelpers.split_path(objectPath);
+        const [tableName, fieldName] = path; // some of these may be 'undefined'
+
+        if (objectType === ObjectTypes.TABLE || objectType === ObjectTypes.FIELD) {
+            assert.tableExists(this.state.tables, tableName);
+        }
+        if (objectType === ObjectTypes.FIELD) {
+            assert.fieldExists(this.state.tables, tableName, fieldName);
+        }
+
+        this.setState({
+            currentObject: Object.freeze({type: objectType, path: path})
+        });
+    },
+
+    getCurrentObject() {
+        return this.state.currentObject;
+    },
+
+    resolveCurrentObject() {
+        const curObjInfo = this.state.currentObject;
+
+        const recognisedTypes = [ObjectTypes.TABLE, ObjectTypes.FIELD];
+        if (!recognisedTypes.some(type => type === curObjInfo.type)) {
+            return null;
+        }
+
+        // It's always going to need to dereference the table part.
+        const tableIndex = this.state.tables.findIndex(
+            (table) => table.name === curObjInfo.path[0]);
+        const table = this.state.tables[tableIndex];
+        if (curObjInfo.type === ObjectTypes.TABLE) return table;
+
+        // Next, dereference the field
+        const fieldIndex = table.fields.findIndex(
+            (field) => field.name === curObjInfo.path[1]);
+        const field = table.fields[fieldIndex];
+        if (curObjInfo.type === ObjectTypes.FIELD) return field;
+    }
+});
+
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// WARNING: DO NOT USE NON-PRIVATE METHODS STAND-ALONE
+// - non-private methods must be bound to App's 'this'
+// - private methods must be called in the style:
+//     objectPropertiesOperations._privateMethod()
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const objectPropertiesOperations = Object.freeze({
+    _mergeObjectSettings(type, oldSettings, newSettings) {
+        return Trees.translate(
+            [newSettings, oldSettings, ObjectSettingsDefs[type].defaults],
+            // newSettings and oldSettings must be in the default settings set:
+            (mtn) => !isSpecialNode(mtn[2]),
+            // For each setting, take the first found from: new, old, default
+            Selectors.first,
+            // Construct from an empty object
+            null,
+            {
+                // Conflicts will arise if newSettings is not a full settings
+                // tree. In that case, recurse down the non-leaf nodes from the
+                // old (or default) settings tree. This ensures that all old
+                // settings are kept, regardless of whether newSettings is
+                // incomplete.
+                conflictPriority: TraversalConflictPriority.NON_LEAF
+            }
+        );
+    },
+
+    _updateTableName(tableName, newName) {
+        // Ensure the table exists (this should never fail, but you never know)
+        const tableNames = this.state.tables.map((table) => table.name);
+        const tableExists = Boolean(tableNames.find((checkTableName) => checkTableName === tableName));
+        if (!tableExists) {
+            throw Error("No such table '"+tableName+"'");
+        }
+
+        // Ensure that the new name is unique
+        newName = getUniqueName(newName,
+            this.state.tables.map((table) => table.name)
+        )
+
+        const newTables = this.state.tables.slice();
+        const tableIndex = newTables.findIndex((table) => table.name === tableName);
+        const table = newTables[tableIndex] = Object.assign({}, newTables[tableIndex]);
+        table.name = newName;
+
+        this.setState({tables: newTables});
+    },
+
+    _updateTableSettings(tableName, newSettings) {
+        // Ensure the table exists (this should never fail, but you never know)
+        const tableNames = this.state.tables.map((table) => table.name);
+        const tableExists = Boolean(tableNames.find((checkTableName) => checkTableName === tableName));
+        if (!tableExists) {
+            throw Error("No such table '"+tableName+"'");
+        }
+
+        const newTables = this.state.tables.slice();
+        const tableIndex = newTables.findIndex((table) => table.name === tableName);
+        const table = newTables[tableIndex] = Object.assign({}, newTables[tableIndex]);
+        table.settings = objectPropertiesOperations._mergeObjectSettings(
+            ObjectTypes.TABLE, table.settings, newSettings)
+
+        this.setState({tables: newTables});
+    },
+
+    _updateFieldName(tableName, fieldName, newName) {
+        assert.tableExists(this.state.tables, tableName);
+        assert.fieldExists(this.state.tables, tableName, fieldName);
+
+        const newTables = this.state.tables.slice();
+
+        const tableIndex = newTables.findIndex((table) => table.name === tableName);
+        const table = newTables[tableIndex] = Object.assign({}, newTables[tableIndex]);
+
+        // Ensure that the new name is unique in this table
+        newName = getUniqueName(newName,
+            table.fields.map((field) => field.name)
+        )
+
+        table.fields = table.fields.slice();
+        const fieldIndex = table.fields.findIndex((field) => field.name === fieldName);
+        const field = table.fields[fieldIndex] = Object.assign({}, table.fields[fieldIndex]);
+        field.name = newName;
+
+        this.setState({tables: newTables});
+    },
+
+    _updateFieldSettings(tableName, fieldName, newSettings) {
+        assert.tableExists(this.state.tables, tableName);
+        assert.fieldExists(this.state.tables, tableName, fieldName);
+
+        const newTables = this.state.tables.slice();
+
+        const tableIndex = newTables.findIndex((table) => table.name === tableName);
+        const table = newTables[tableIndex] = Object.assign({}, newTables[tableIndex]);
+
+        table.fields = table.fields.slice();
+        const fieldIndex = table.fields.findIndex((field) => field.name === fieldName);
+        const field = table.fields[fieldIndex] = Object.assign({}, table.fields[fieldIndex]);
+
+        field.settings = objectPropertiesOperations._mergeObjectSettings(
+            ObjectTypes.FIELD, field.settings, newSettings);
+
+        this.setState({tables: newTables});
+    },
+
+    updateObjectName(objInfo, newName) {
+        // FIXME: Just do it the hacky way for now
+        switch (objInfo.type) {
+            case ObjectTypes.TABLE:
+                objectPropertiesOperations._updateTableName.apply(
+                    this, [objInfo.path[0], newName]);
+                break;
+
+            case ObjectTypes.FIELD:
+                objectPropertiesOperations._updateFieldName.apply(
+                    this, [objInfo.path[0], objInfo.path[1], newName]);
+                break;
+        }
+    },
+
+    updateObjectSettings(objInfo, newSettings) {
+        // FIXME: Just do it the hacky way for now
+        switch (objInfo.type) {
+            case ObjectTypes.TABLE:
+                objectPropertiesOperations._updateTableSettings.apply(
+                    this, [objInfo.path[0], newSettings]);
+                break;
+
+            case ObjectTypes.FIELD:
+                objectPropertiesOperations._updateFieldSettings.apply(
+                    this, [objInfo.path[0], objInfo.path[1], newSettings]);
+                break;
+        }
+    }
+});
+
+@DragDropContext(HTML5Backend)
+export default class App extends React.Component {
+    constructor (props) {
+        super(props);
+
+        this.state = {
+            tables: [],
+            currentObject: {type: null, path: null}
+        }
+
+        this.actions = {
+            createTable: objectOperations.createTable.bind(this),
+            deleteTable: objectOperations.deleteTable.bind(this),
+            createField: objectOperations.createField.bind(this),
+            deleteField: objectOperations.deleteField.bind(this),
+            moveField: objectOperations.moveField.bind(this),
+
+            setCurrentObject: currentObjectManagement.setCurrentObject.bind(this),
+            getCurrentObject: currentObjectManagement.getCurrentObject.bind(this),
+            resolveCurrentObject: currentObjectManagement.resolveCurrentObject.bind(this),
+
+            updateObjectName: objectPropertiesOperations.updateObjectName.bind(this),
+            updateObjectSettings: objectPropertiesOperations.updateObjectSettings.bind(this)
+        }
     }
 
     render () {
