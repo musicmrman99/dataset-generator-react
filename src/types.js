@@ -290,7 +290,7 @@ const fieldForm = Object.freeze({
 
     intSequence: {
       _index: 3,
-      _depends: {
+      _depends: { // Depends
         path: ["dataType", "dataType"],
         value: "intSequence"
       },
@@ -336,7 +336,7 @@ const fieldForm = Object.freeze({
       },
       loopingSequenceParams: {
         _index: 5,
-        _depends: {
+        _depends: { // Depends
           path: ["dataType", "intSequence", "sequenceType"],
           value: "looping"
         },
@@ -361,7 +361,7 @@ const fieldForm = Object.freeze({
 
     intRandom: {
       _index: 4,
-      _depends: {
+      _depends: { // Depends
         path: ["dataType", "dataType"],
         value: "intRandom"
       },
@@ -389,7 +389,7 @@ const fieldForm = Object.freeze({
 
     floatSequence: {
       _index: 5,
-      _depends: {
+      _depends: { // Depends
         path: ["dataType", "dataType"],
         value: "floatSequence"
       },
@@ -426,7 +426,7 @@ const fieldForm = Object.freeze({
       },
       loopingSequenceParams: {
         _index: 5,
-        _depends: {
+        _depends: { // Depends
           path: ["dataType", "floatSequence", "sequenceType"],
           value: "looping"
         },
@@ -448,7 +448,7 @@ const fieldForm = Object.freeze({
 
     floatRandom: {
       _index: 6,
-      _depends: {
+      _depends: { // Depends
         path: ["dataType", "dataType"],
         value: "floatRandom"
       },
