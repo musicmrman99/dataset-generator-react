@@ -65,18 +65,7 @@ export default class ObjectSettingsTab extends React.Component {
                 returnElement = (<p key={settingKey}>{inputInfo.text}</p>);
             }
 
-        // Datalist - lists that can be used by input elements for autocomplete
-        } else if (settingKey.startsWith("-")) {
-            const options = inputInfo.options.map(
-                (option) => (<option key={option} value={option}></option>)
-            );
-
-            // Name the datalist after the given key (excluding the initial "-")
-            returnElement = (<datalist key={settingKey} id={settingKey.slice(1)}>
-                {options}
-            </datalist>);
-
-        // Input - input form elements
+        // Input - input form elements (both ordinary and select types)
         } else {
             // As the settings for the current object are the only settings that
             // are ever going to be displayed (this is ensured in render()),
@@ -84,6 +73,40 @@ export default class ObjectSettingsTab extends React.Component {
             // is the object to update the settings for. ... The alternative
             // would be to do some ugly argument-passing.
             const curObjInfo = this.props.actions.getCurrentObject();
+
+            // Some DOM event callbacks (utility functions, partially to
+            // reduce this rediculous indentation). These are arrow functions to
+            // ensure their 'this' is bound to the 'this' of this function.
+            // (Get your head around that if you can.) I didn't want to manually
+            // '.bind()' - ugly thing.
+
+            const updateDontValidate = (event, propName) => {
+                this.props.actions.updateObjectSettings(
+                    curObjInfo,
+                    insertAtPath({}, settingPath, event.target[propName], true)
+                );
+            }
+
+            const updateAfterValidate = (event, propName) => {
+                let result = null;
+                if (inputInfo.validator !== undefined) {
+                    // Must produce a Value
+                    result = inputInfo.validator(event.target[propName]);
+                } else {
+                    result = new Value(event.target[propName]);
+                }
+
+                if (result.error != null) {
+                    // WARNING: alerts can get quite irritating
+                    alert(result.error);
+                    return;
+                }
+
+                this.props.actions.updateObjectSettings(
+                    curObjInfo,
+                    insertAtPath({}, settingPath, result.value, true)
+                );
+            }
 
             let inputElement = null;
             switch (inputInfo.type) {
@@ -100,53 +123,48 @@ export default class ObjectSettingsTab extends React.Component {
             case "time":
             case "url":
             case "week":
-                inputElement = (<input type={inputInfo.type}
+                // Initially, don't validate on change - that would prevent the
+                // user being able to enter some valid inputs. Eg. it would be
+                // impossible to enter values in e-notation, eg. "1e-12", which
+                // could be used as a faster way of typing a rounding value.
+                inputElement = (<input
+                    type={inputInfo.type}
                     value={settingVal}
-                    onChange={(e) => {
-                        this.props.actions.updateObjectSettings(
-                            curObjInfo,
-                            insertAtPath({}, settingPath, e.target.value, true)
-                        );
-                    }}
-                    onBlur={(e) => {
-                        let result = null;
-                        if (inputInfo.validator !== undefined) {
-                            // Must produce a Value
-                            result = inputInfo.validator(e.target.value)
-                        } else {
-                            result = new Value(e.target.value);
-                        }
-
-                        if (result.error != null) {
-                            // WARNING: alerts can get quite irritating
-                            alert(result.error);
-                            return;
-                        }
-
-                        this.props.actions.updateObjectSettings(
-                            curObjInfo,
-                            insertAtPath({}, settingPath, result.value, true)
-                        );
-                    }}
+                    onChange={(e) => updateDontValidate(e, "value")}
+                    onBlur={(e) => updateAfterValidate(e, "value")}
                     {...inputInfo.attrs}>
                 </input>);
                 break;
 
             // Checkbox is slightly different - use its "checked" attribute
-            // instead of its value.
+            // instead of its value. Also, it dosn't need a validator for
+            // something that the HTML itself validates - a checkbox can only be
+            // on or off.
             case "checkbox":
-                inputElement = (<input type={inputInfo.type}
+                inputElement = (<input
+                    type={inputInfo.type}
                     checked={settingVal}
-                    onChange={(e) => {
-                        // Don't need a validator for something that the HTML
-                        // itself validates - a checkbox can only be on or off.
-                        this.props.actions.updateObjectSettings(
-                            curObjInfo,
-                            insertAtPath({}, settingPath, e.target.checked, true)
-                        );
-                    }}
+                    onChange={(e) => updateDontValidate(e, "checked")}
                     {...inputInfo.attrs}>
                 </input>);
+                break;
+
+            // Pretend that 'select' is a type of input (NOTE: it's not). This
+            // also doesn't need a validator (see 'checkbox' for why).
+            case "select":
+                const optionElements = Object.entries(inputInfo.options).map(
+                    ([optionKey, optionValue]) => (<option key={optionKey}
+                        value={optionKey}>
+                        {optionValue}
+                    </option>)
+                );
+    
+                inputElement = (<select
+                    value={settingVal}
+                    onChange={(e) => updateDontValidate(e, "value")}
+                    {...inputInfo.attrs}>
+                    {optionElements}
+                </select>);
                 break;
 
             // Notably, "radio" is not included at all - instead, use a text
@@ -214,7 +232,6 @@ export default class ObjectSettingsTab extends React.Component {
                     // objects, but are not part of the tree.
                     isLeaf: (node) => (
                         node["type"] !== undefined || // Input node
-                        node["options"] !== undefined || // Datalist node
                         node["text"] !== undefined // Heading/Text node
                     ),
 

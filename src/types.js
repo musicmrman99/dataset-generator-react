@@ -16,91 +16,88 @@ export const ObjectTypes = Object.freeze({
 // Format/Structure Documentation
 // ==================================================
 
-// Each "object type settings" object must contain the following properties:
+/*
+Each "object type settings" object must contain the following properties:
 
-// defaults
-// --------------------
-// This contains the default settings for each object type. This is in a tree
-// structure, where only primitive values are leaf nodes.
-//
-// form
-// --------------------
-// This defines the information about the HTML elements to use in the settings
-// pane for each object type. Every input element defined should have a
-// corresponding property in the 'defaults' tree (ie. there should be a leaf
-// node at the same path in both trees).
-//
-// The following types of element are available:
-//   - Text elements: These display a heading or paragraph in the form. Which
-//     element is used depends on the depth of the text element in the tree.
-//     Text elements at a depth of 1 to 6 use the heading 1 to 6 HTML elements.
-//     Text elements at a depth of 7 or more use paragraph HTML elements.
-//
-//     Text element keys start with a '#', so they must be given as a string
-//     literal. Text elements contain the following properties:
-//       - text: This contains the text to display.
-//         NOTE: Both the '#' and this property are required to make a node a
-//               text element - excluding this property for a text element will
-//               break the form.
-//
-//   - Datalist elements: These are hidden elements that define lists of
-//     options. They can be used by input elements to provide autocomplete and
-//     suggestion functionality.
-//
-//     Datalist element keys start with a '-', so they must be given as a string
-//     literal. Datalist elements contain the following properties:
-//       - options: An array containing the string values to use as options.
-//         NOTE: Both the '-' and this property are required to make a node a
-//               datalist element - excluding this property for a text element
-//               will break the form.
-//
-//   - Input elements: These display an input that corresponds to a setting in
-//     the 'defaults' tree. When the input is edited, the corresponding value in
-//     the settings tree is updated.
-//
-//     Input element keys can be anything that would not make them another type
-//     of element. Input elements contain the following properties:
-//       - type: A string defining the type of the input. See:
-//         https://www.w3schools.com/html/html_form_input_types.asp
-//         NOTE: This property is required to make a node an input element -
-//               excluding this property for an input element will break the
-//               form.
-//
-//       - label: A string to display before the input element that tells the
-//         user what the input represents.
-//       - attrs (optional): An object containing any additional attributes to
-//         pass to the input HTML element. Defaults to none.
-//       - validator (optional): A function that recieves the new value of the
-//         input as its argument, sanitises and validates that value, and
-//         returns an object containing one of two keys:
-//           - error: If the new value is invalid, even after any sanitisation,
-//             then this must be set to a string stating why. (value must be
-//             left undefined.)
-//           - value: The sanitised and validated new value. (error must be left
-//             undefined.)
-//         NOTE: The 'validator' property is ignored for the "checkbox" input
-//               type, as it can only be either true or false.
-//
-// A form is made up of a tree of elements, contained within sets of elements
-// (plain objects). As such, each set can contain the following:
-//   - *elements*: Element objects, as defined above.
-//   - *element sets*: Other element sets, as defined here.
-//   - _depends: This is an object that defines whether to display any sub-nodes
-//     of the element set. It must contain the following properties:
-//       - path: An array representing the path to a setting (ie. in the
-//         structure of 'defaults').
-//       - value: The value to check the the setting against - if the setting
-//         has this value, the element set is shown, otherwise it is hidden.
-//
-// All elements and element sets must also have the following property:
-//   - _index: An integer representing the order to display the form items in.
-//     Lower values indicate being displayed further up the form, higher values
-//     further down the form. Each element at any given level in the form tree
-//     should have a unique integer for that level, thereby ensuring a
-//     consistent layout every time the browser loads the form. The order of
-//     elements whose _index values are equal is UNDEFINED, and MAY RESULT IN
-//     DIFFERENT ORDERS IN DIFFERENT FORM STATES (see _depends) OR EVEN EACH
-//     TIME THE BROWSER LOADS THE PAGE!!!
+defaults
+--------------------
+This contains the default settings for each object type. This is in a tree
+structure, where only primitive values are leaf nodes.
+
+form
+--------------------
+This defines the information about the HTML elements to use in the settings pane
+for each object type. Every input element defined should have a corresponding
+property in the 'defaults' tree (ie. there should be a leaf node at the same
+path in both trees).
+
+The following types of element are available:
+  - Text elements: These display a heading or paragraph in the form. Which
+    element is used depends on the depth of the text element in the tree. Text
+    elements at a depth of 1 to 6 use the heading 1 to 6 HTML elements. Text
+    elements at a depth of 7 or more use paragraph HTML elements.
+
+    Text element keys start with a '#', so they must be given as a string
+    literal. Text elements contain the following properties:
+      - text: This contains the text to display.
+
+  - Input elements: These display an input that corresponds to a setting in the
+    'defaults' tree. When the input is edited, the corresponding value in the
+    settings tree is updated.
+
+    Input element keys can be anything that would not make them another type of
+    element. Inputs can use two different data schemes - one for <input>
+    elements (which use a free-input box) and one for <select> elements (which
+    use a drop-down box).
+
+    Ordinary input elements contain the following properties:
+      - type: A string defining the type of the input. Almost all types are
+        supported (as of July 2019).
+        See: https:www.w3schools.com/html/html_form_input_types.asp
+      - label: A string to display before the input element that tells the user
+        what the input represents.
+      - attrs (optional): An object containing any additional attributes to pass
+        to the input HTML element. Defaults to none.
+      - validator (optional): A function that recieves the new value of the
+        input as its argument, sanitises and validates that value, and returns
+        an object containing one of two keys:
+          - error: If the new value is invalid, even after any sanitisation,
+            then this must be set to a string stating why. (value must be left
+            undefined.)
+          - value: The sanitised and validated new value. (error must be left
+            undefined.)
+        NOTE: The 'validator' property is ignored for the "checkbox" input type,
+              as it can only be either true or false.
+
+    Select-type input elements contain the following properties:
+      - type: Select-type elements have a type of 'select'. NOTE: 'select' is
+        not a real input type.
+      - options: An object whose:
+          - keys are the values to store as settings
+          - values are the string values to display in the drop-down menu
+
+A form is made up of a tree of elements, contained within sets of elements
+(plain objects). As such, each set can contain the following:
+  - *elements*: Element objects, as defined above.
+  - *element sets*: Other element sets, as defined here.
+  - _depends: This is an object that defines whether to display any sub-nodes of
+    the element set. It must contain the following properties:
+      - path: An array representing the path to a setting (ie. in the structure
+        of 'defaults').
+      - value: The value to check the the setting against - if the setting has
+        this value, the element set is shown, otherwise it is hidden.
+    If no _depends is given, the set defaults to shown.
+
+All elements and element sets must also have the following property:
+  - _index: An integer representing the order to display the form items in.
+    Lower values indicate being displayed further up the form, higher values
+    further down the form. Each element at any given level in the form tree
+    should have a unique integer for that level, thereby ensuring a consistent
+    layout every time the browser loads the form. The order of elements whose
+    _index values are equal is UNDEFINED, and MAY RESULT IN DIFFERENT ORDERS IN
+    DIFFERENT FORM STATES (see _depends) OR EVEN EACH TIME THE BROWSER LOADS THE
+    PAGE!!!
+*/
 
 // ==================================================
 // Utilities
@@ -224,19 +221,19 @@ const tableForm = Object.freeze({
 // Field Definitions
 // ==================================================
 
-const dataTypeList = [
-  "Null",
-  "Forename",
-  "Surname",
-  "Phone Number",
-  "Number Sequence", // Has params
-  "Random Number", // Has params
-];
+const dataTypeList = {
+  null: "Null",
+  forename: "Forename",
+  surname: "Surname",
+  phoneNumber: "Phone Number",
+  numberSequence: "Number Sequence", // Has params
+  randomNumber: "Random Number", // Has params
+};
 
-const numberSequenceTypeList = [
-  "Infinite",
-  "Looping"
-];
+const numberSequenceTypeList = {
+  infinite: "Infinite",
+  looping: "Looping"
+};
 
 const fieldDefaults = Object.freeze({
   keySettings: {
@@ -249,11 +246,11 @@ const fieldDefaults = Object.freeze({
   },
 
   dataType: {
-    dataType: dataTypeList[0],
+    dataType: Object.keys(dataTypeList)[0],
     numberSequence: {
       start: 0,
       step: 1,
-      sequenceType: numberSequenceTypeList[0],
+      sequenceType: Object.keys(numberSequenceTypeList)[0],
       loopingSequenceParams: {
         loopAt: 0
       }
@@ -330,34 +327,21 @@ const fieldForm = Object.freeze({
       _index: 0,
       text: "Data Type"
     },
-    "-dataType": {
-      _index: 1,
-      options: dataTypeList
-    },
     dataType: {
-      _index: 2,
-      type: "text",
+      _index: 1,
+      type: "select",
       label: "Data Type",
-      attrs: {
-        list: "dataType"
-      },
-      validator: function (inp) {
-        if (dataTypeList.some((dataType) => dataType === inp)) {
-          return new Value(inp);
-        } else {
-          return new Value (null, "Data type not recognised: "+inp)
-        }
-      }
+      options: dataTypeList
     },
 
     // Number Sequence Type (additional parameters)
     // --------------------
 
     numberSequence: {
-      _index: 5,
+      _index: 2,
       _depends: { // Depends
         path: ["dataType", "dataType"],
-        value: "Number Sequence"
+        value: "numberSequence"
       },
 
       start: {
@@ -384,31 +368,18 @@ const fieldForm = Object.freeze({
           sane_number("end", value))
         )
       },
-      
-      "-numberSequenceType": {
+
+      sequenceType: {
         _index: 3,
+        type: "select",
+        label: "Sequence Type",
         options: numberSequenceTypeList
       },
-      sequenceType: {
-        _index: 4,
-        type: "text",
-        label: "Sequence Type",
-        attrs: {
-          list: "numberSequenceType"
-        },
-        validator: function (inp) {
-          if (numberSequenceTypeList.some((seqType) => seqType === inp)) {
-            return new Value(inp);
-          } else {
-            return new Value (null, "Number sequence type not recognised: "+inp)
-          }
-        }
-      },
       loopingSequenceParams: {
-        _index: 5,
+        _index: 4,
         _depends: { // Depends
           path: ["dataType", "numberSequence", "sequenceType"],
-          value: "Looping"
+          value: "looping"
         },
 
         "#looping-number-sequence": {
@@ -434,10 +405,10 @@ const fieldForm = Object.freeze({
     // --------------------
 
     randomNumber: {
-      _index: 6,
+      _index: 3,
       _depends: { // Depends
         path: ["dataType", "dataType"],
-        value: "Random Number"
+        value: "randomNumber"
       },
 
       start: {
