@@ -613,6 +613,18 @@ const fieldForm = Object.freeze({
           sane_setOnBlank(value, 1).then((value) =>
           sane_float("end", value))
         )
+      },
+      round: {
+        _index: 2,
+        type: "number",
+        label: "Round to Nearest",
+        attrs: {
+          step: "any"
+        },
+        validator: numberValidatorFactory((value) =>
+          sane_setOnBlank(value, 1).then((value) =>
+          sane_float("end", value))
+        )
       }
     },
 
