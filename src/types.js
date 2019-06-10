@@ -101,6 +101,111 @@ export const ObjectTypes = Object.freeze({
 //     TIME THE BROWSER LOADS THE PAGE!!!
 
 // ==================================================
+// Utilities
+// ==================================================
+
+// A (very) small Either(<value>, <error>) class
+class Value {
+  constructor(value, error) {
+    this.value = (error != null) ? undefined : value;
+    this.error = (error == null) ? undefined : error;
+  }
+}
+
+// This more specific class allows the value (if not an error) to be chained. If
+// an error, simply return the Value unchanged. Use it in converter functions.
+// NOTE: This slightly differs from the behaviour of Promise. This skips *all*
+//       then()s after an error, as there is no error handling with chaining.
+//       The only way to handle errors is to stop the chain, which for this
+//       use-case is rather the point.
+class ConvertedValue extends Value {
+  then (thenFn) {
+    if (this.error != null) return this;
+    return thenFn(this.value);
+  }
+}
+
+// ValidatedValue isn't needed, as you can chain by using plain old '&&'.
+
+// Sanitiser Functions
+// ----------
+
+function sane_setOnBlank (value, defaultValue) {
+  if (value === "") return new ConvertedValue(defaultValue);
+  else return new ConvertedValue(value);
+}
+
+// Note: Type validation is less useful for some input types, as input.value
+//       will be the blank string for input that failed HTML validation. For
+//       example, for <input type="number">, input.value will be blank if the
+//       value entered contains non-numeric data - oh, except if it's a string
+//       in scientific e-notation. Generally, the rules are sometimes arbitrary.
+//       In the case of my example, see: https://stackoverflow.com/q/18677323
+
+function sane_int (settingName, value) {
+  const intVal = parseInt(value);
+  if (isNaN(intVal)) {
+    return new ConvertedValue(null,
+      "Invalid value for setting '"+settingName+"' "+
+      "(not an integer): "+
+      value
+    );
+  } else {
+    return new ConvertedValue(intVal);
+  }
+}
+
+function sane_float (settingName, value) {
+  const floatVal = parseFloat(value);
+  if (isNaN(floatVal)) {
+    return new ConvertedValue(null,
+      "Invalid value for setting '"+settingName+"' "+
+      "(not a decimal number): "+
+      value
+    );
+  } else {
+    return new ConvertedValue(floatVal);
+  }
+}
+
+// Validator Functions
+// ----------
+
+function valid_satisfies (settingName, value, satisfiesFn, constraintStr) {
+  const satis = satisfiesFn(value);
+
+  if (satis) return new Value(satis);
+  else return new Value(null,
+    "Invalid value for setting '"+settingName+"' "+
+    "(doesn't satisfy constraint: "+constraintStr+"): "+
+    value
+  );
+}
+
+// 'Validator' (ObjectSettingsTab meaning) Function Factories
+// ----------
+
+// sanitise(inputValue)
+//   ==> {value: <sanitised-value>} || {error: <sanitisation-error-message>}
+// validate(inputValue)
+//   ==> <value> || {error: <validation-error-message>}
+//   NOTE: <value> is disregarded - any conversion must be done with sanitise().
+function numberValidatorFactory(sanitise, validate) {
+  if (sanitise == null) sanitise = (val) => val; // Does not sanitise
+  if (validate == null) validate = (val) => true; // Always validates OK
+
+  return function (input) {
+    const sanitised = sanitise(input);
+    if (sanitised.error !== undefined) return sanitised; // Return the error
+
+    const validation = validate(sanitised.value);
+    if (validation.error !== undefined) return validation; // Return the error
+
+    return { value: sanitised.value }; // Return the value
+  }
+}
+
+// ==================================================
 // Table Definitions
 // ==================================================
 
@@ -116,23 +221,14 @@ const tableForm = Object.freeze({
     attrs: {
       "min": 1 // Not a good garuntee
     },
-    validator: function (inp) {
-      if (inp === "") return { value: 0 };
-
-      const val = parseInt(inp);
-      if (isNaN(val)) {
-        return {
-          error: "Invalid value for field 'numRecords': " + val
-        };
-      }
-      if (val < 1) {
-        return {
-          error: "Invalid value for field 'numRecords' (below minimum): " + val
-        };
-      }
-
-      return { value: val };
-    }
+    validator: numberValidatorFactory(
+      (value) =>
+        sane_setOnBlank(value, 1).then((value) =>
+        sane_int("numRecords", value)),
+      (value) =>
+        valid_satisfies("numRecords", value,
+          (checkValue) => checkValue >= 1, ">= 1")
+    )
   }
 });
 
@@ -305,7 +401,11 @@ const fieldForm = Object.freeze({
         label: "Start Value",
         attrs: {
           step: 1
-        }
+        },
+        validator: numberValidatorFactory((value) =>
+          sane_setOnBlank(value, 0).then((value) =>
+          sane_int("start", value))
+        )
       },
       step: {
         _index: 2,
@@ -313,7 +413,11 @@ const fieldForm = Object.freeze({
         label: "Step",
         attrs: {
           step: 1
-        }
+        },
+        validator: numberValidatorFactory((value) =>
+          sane_setOnBlank(value, 1).then((value) =>
+          sane_int("step", value))
+        )
       },
       "-intSequenceType": {
         _index: 3,
@@ -351,7 +455,11 @@ const fieldForm = Object.freeze({
           label: "Value to loop at",
           attrs: {
             step: 1
-          }
+          },
+          validator: numberValidatorFactory((value) =>
+            sane_setOnBlank(value, 0).then((value) =>
+            sane_int("loopAt", value))
+          )
         }
       }
     },
@@ -372,7 +480,11 @@ const fieldForm = Object.freeze({
         label: "Start of Range",
         attrs: {
           step: 1
-        }
+        },
+        validator: numberValidatorFactory((value) =>
+          sane_setOnBlank(value, 0).then((value) =>
+          sane_int("start", value))
+        )
       },
       end: {
         _index: 1,
@@ -380,7 +492,11 @@ const fieldForm = Object.freeze({
         label: "End of Range",
         attrs: {
           step: 1
-        }
+        },
+        validator: numberValidatorFactory((value) =>
+          sane_setOnBlank(value, 1).then((value) =>
+          sane_int("end", value))
+        )
       }
     },
 
@@ -397,12 +513,26 @@ const fieldForm = Object.freeze({
       start: {
         _index: 1,
         type: "number",
-        label: "Start Value"
+        label: "Start Value",
+        attrs: {
+          step: "any"
+        },
+        validator: numberValidatorFactory((value) =>
+          sane_setOnBlank(value, 0).then((value) =>
+          sane_float("end", value))
+        )
       },
       step: {
         _index: 2,
         type: "number",
-        label: "Step"
+        label: "Step",
+        attrs: {
+          step: "any"
+        },
+        validator: numberValidatorFactory((value) =>
+          sane_setOnBlank(value, 1).then((value) =>
+          sane_float("end", value))
+        )
       },
       
       "-floatSequenceType": {
@@ -438,7 +568,14 @@ const fieldForm = Object.freeze({
         loopAt: {
           _index: 1,
           type: "number",
-          label: "Value to loop at"
+          label: "Value to loop at",
+          attrs: {
+            step: "any"
+          },
+          validator: numberValidatorFactory((value) =>
+            sane_setOnBlank(value, 0).then((value) =>
+            sane_float("end", value))
+          )
         }
       }
     },
@@ -456,12 +593,26 @@ const fieldForm = Object.freeze({
       start: {
         _index: 0,
         type: "number",
-        label: "Start of Range"
+        label: "Start of Range",
+        attrs: {
+          step: "any"
+        },
+        validator: numberValidatorFactory((value) =>
+          sane_setOnBlank(value, 0).then((value) =>
+          sane_float("end", value))
+        )
       },
       end: {
         _index: 1,
         type: "number",
-        label: "End of Range"
+        label: "End of Range",
+        attrs: {
+          step: "any"
+        },
+        validator: numberValidatorFactory((value) =>
+          sane_setOnBlank(value, 1).then((value) =>
+          sane_float("end", value))
+        )
       }
     },
 
