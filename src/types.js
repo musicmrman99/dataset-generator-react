@@ -136,30 +136,22 @@ function sane_setOnBlank (value, defaultValue) {
 //       in scientific e-notation. Generally, the rules are sometimes arbitrary.
 //       In the case of my example, see: https://stackoverflow.com/q/18677323
 
-function sane_int (settingName, value) {
-  const intVal = parseInt(value);
-  if (isNaN(intVal)) {
-    return new ConvertedValue(null,
-      "Invalid value for setting '"+settingName+"' "+
-      "(not an integer): "+
-      value
-    );
-  } else {
-    return new ConvertedValue(intVal);
-  }
-}
-
-function sane_float (settingName, value) {
+function sane_number (settingName, value, roundTo) {
   const floatVal = parseFloat(value);
   if (isNaN(floatVal)) {
     return new ConvertedValue(null,
       "Invalid value for setting '"+settingName+"' "+
-      "(not a decimal number): "+
+      "(not a number): "+
       value
     );
-  } else {
-    return new ConvertedValue(floatVal);
   }
+
+  let roundedVal = floatVal; // Not Rounded
+  if (roundTo != null) { // Rounded
+    roundedVal = roundTo * Math.round(floatVal/roundTo);
+  }
+
+  return new ConvertedValue(roundedVal);
 }
 
 // Validator Functions
@@ -220,7 +212,7 @@ const tableForm = Object.freeze({
     validator: numberValidatorFactory(
       (value) =>
         sane_setOnBlank(value, 1).then((value) =>
-        sane_int("numRecords", value)),
+        sane_number("numRecords", value, 1)),
       (value) =>
         valid_satisfies("numRecords", value,
           (checkValue) => checkValue >= 1, ">= 1")
@@ -237,18 +229,11 @@ const dataTypeList = [
   "Forename",
   "Surname",
   "Phone Number",
-  "Integer Sequence", // Has params
-  "Random Integer",  // Has params
-  "Float Sequence", // Has params
-  "Random Float", // Has params
+  "Number Sequence", // Has params
+  "Random Number", // Has params
 ];
 
-const intSequenceTypeList = [
-  "Infinite",
-  "Looping"
-];
-
-const floatSequenceTypeList = [
+const numberSequenceTypeList = [
   "Infinite",
   "Looping"
 ];
@@ -265,27 +250,15 @@ const fieldDefaults = Object.freeze({
 
   dataType: {
     dataType: dataTypeList[0],
-    intSequence: {
+    numberSequence: {
       start: 0,
       step: 1,
-      sequenceType: intSequenceTypeList[0],
+      sequenceType: numberSequenceTypeList[0],
       loopingSequenceParams: {
         loopAt: 0
       }
     },
-    intRandom: {
-      start: 0,
-      end: 1
-    },
-    floatSequence: {
-      start: 0,
-      step: 1,
-      sequenceType: floatSequenceTypeList[0],
-      loopingSequenceParams: {
-        loopAt: 0
-      }
-    },
-    floatRandom: {
+    randomNumber: {
       start: 0,
       end: 1,
       round: 1
@@ -377,133 +350,14 @@ const fieldForm = Object.freeze({
       }
     },
 
-    // Integer Sequence Type (additional parameters)
+    // Number Sequence Type (additional parameters)
     // --------------------
 
-    intSequence: {
-      _index: 3,
-      _depends: { // Depends
-        path: ["dataType", "dataType"],
-        value: "Integer Sequence"
-      },
-
-      "#int-sequence": {
-        _index: 0,
-        text: "Integer Sequence Settings"
-      },
-      start: {
-        _index: 1,
-        type: "number",
-        label: "Start Value",
-        attrs: {
-          step: 1
-        },
-        validator: numberValidatorFactory((value) =>
-          sane_setOnBlank(value, 0).then((value) =>
-          sane_int("start", value))
-        )
-      },
-      step: {
-        _index: 2,
-        type: "number",
-        label: "Step",
-        attrs: {
-          step: 1
-        },
-        validator: numberValidatorFactory((value) =>
-          sane_setOnBlank(value, 1).then((value) =>
-          sane_int("step", value))
-        )
-      },
-      "-intSequenceType": {
-        _index: 3,
-        options: intSequenceTypeList
-      },
-      sequenceType: {
-        _index: 4,
-        type: "text",
-        label: "Sequence Type",
-        attrs: {
-          list: "intSequenceType"
-        },
-        validator: function (inp) {
-          if (intSequenceTypeList.some((seqType) => seqType === inp)) {
-            return new Value(inp);
-          } else {
-            return new Value (null, "Integer sequence type not recognised: "+inp)
-          }
-        }
-      },
-      loopingSequenceParams: {
-        _index: 5,
-        _depends: { // Depends
-          path: ["dataType", "intSequence", "sequenceType"],
-          value: "Looping"
-        },
-
-        "#looping-int-sequence": {
-          _index: 0,
-          text: "Looping Integer Sequence Settings"
-        },
-        loopAt: {
-          _index: 1,
-          type: "number",
-          label: "Value to loop at",
-          attrs: {
-            step: 1
-          },
-          validator: numberValidatorFactory((value) =>
-            sane_setOnBlank(value, 0).then((value) =>
-            sane_int("loopAt", value))
-          )
-        }
-      }
-    },
-    
-    // Random Integer Type (additional parameters)
-    // --------------------
-
-    intRandom: {
-      _index: 4,
-      _depends: { // Depends
-        path: ["dataType", "dataType"],
-        value: "Random Integer"
-      },
-
-      start: {
-        _index: 0,
-        type: "number",
-        label: "Start of Range",
-        attrs: {
-          step: 1
-        },
-        validator: numberValidatorFactory((value) =>
-          sane_setOnBlank(value, 0).then((value) =>
-          sane_int("start", value))
-        )
-      },
-      end: {
-        _index: 1,
-        type: "number",
-        label: "End of Range",
-        attrs: {
-          step: 1
-        },
-        validator: numberValidatorFactory((value) =>
-          sane_setOnBlank(value, 1).then((value) =>
-          sane_int("end", value))
-        )
-      }
-    },
-
-    // Float Sequence Type (additional parameters)
-    // --------------------
-
-    floatSequence: {
+    numberSequence: {
       _index: 5,
       _depends: { // Depends
         path: ["dataType", "dataType"],
-        value: "Float Sequence"
+        value: "Number Sequence"
       },
 
       start: {
@@ -515,7 +369,7 @@ const fieldForm = Object.freeze({
         },
         validator: numberValidatorFactory((value) =>
           sane_setOnBlank(value, 0).then((value) =>
-          sane_float("end", value))
+          sane_number("end", value))
         )
       },
       step: {
@@ -527,39 +381,39 @@ const fieldForm = Object.freeze({
         },
         validator: numberValidatorFactory((value) =>
           sane_setOnBlank(value, 1).then((value) =>
-          sane_float("end", value))
+          sane_number("end", value))
         )
       },
       
-      "-floatSequenceType": {
+      "-numberSequenceType": {
         _index: 3,
-        options: floatSequenceTypeList
+        options: numberSequenceTypeList
       },
       sequenceType: {
         _index: 4,
         type: "text",
         label: "Sequence Type",
         attrs: {
-          list: "floatSequenceType"
+          list: "numberSequenceType"
         },
         validator: function (inp) {
-          if (floatSequenceTypeList.some((seqType) => seqType === inp)) {
+          if (numberSequenceTypeList.some((seqType) => seqType === inp)) {
             return new Value(inp);
           } else {
-            return new Value (null, "Float sequence type not recognised: "+inp)
+            return new Value (null, "Number sequence type not recognised: "+inp)
           }
         }
       },
       loopingSequenceParams: {
         _index: 5,
         _depends: { // Depends
-          path: ["dataType", "floatSequence", "sequenceType"],
+          path: ["dataType", "numberSequence", "sequenceType"],
           value: "Looping"
         },
 
-        "#looping-float-sequence": {
+        "#looping-number-sequence": {
           _index: 0,
-          text: "Looping Float Sequence Settings"
+          text: "Looping Number Sequence Settings"
         },
         loopAt: {
           _index: 1,
@@ -570,20 +424,20 @@ const fieldForm = Object.freeze({
           },
           validator: numberValidatorFactory((value) =>
             sane_setOnBlank(value, 0).then((value) =>
-            sane_float("end", value))
+            sane_number("end", value))
           )
         }
       }
     },
 
-    // Float Sequence Type (additional parameters)
+    // Random Number Type (additional parameters)
     // --------------------
 
-    floatRandom: {
+    randomNumber: {
       _index: 6,
       _depends: { // Depends
         path: ["dataType", "dataType"],
-        value: "Random Float"
+        value: "Random Number"
       },
 
       start: {
@@ -595,7 +449,7 @@ const fieldForm = Object.freeze({
         },
         validator: numberValidatorFactory((value) =>
           sane_setOnBlank(value, 0).then((value) =>
-          sane_float("end", value))
+          sane_number("end", value))
         )
       },
       end: {
@@ -607,7 +461,7 @@ const fieldForm = Object.freeze({
         },
         validator: numberValidatorFactory((value) =>
           sane_setOnBlank(value, 1).then((value) =>
-          sane_float("end", value))
+          sane_number("end", value))
         )
       },
       round: {
@@ -619,7 +473,7 @@ const fieldForm = Object.freeze({
         },
         validator: numberValidatorFactory((value) =>
           sane_setOnBlank(value, 1).then((value) =>
-          sane_float("end", value))
+          sane_number("end", value))
         )
       }
     },
