@@ -1,3 +1,5 @@
+import Value from './helpers/value'
+
 export const InteractableTypes = Object.freeze({
   TABLE_CONSTRUCTOR: "TableConstructor",
   FIELD_CONSTRUCTOR: "FieldConstructor",
@@ -104,14 +106,6 @@ export const ObjectTypes = Object.freeze({
 // Utilities
 // ==================================================
 
-// A (very) small Either(<value>, <error>) class
-class Value {
-  constructor(value, error) {
-    this.value = (error != null) ? undefined : value;
-    this.error = (error == null) ? undefined : error;
-  }
-}
-
 // This more specific class allows the value (if not an error) to be chained. If
 // an error, simply return the Value unchanged. Use it in converter functions.
 // NOTE: This slightly differs from the behaviour of Promise. This skips *all*
@@ -189,7 +183,9 @@ function valid_satisfies (settingName, value, satisfiesFn, constraintStr) {
 //   ==> {value: <sanitised-value>} || {error: <sanitisation-error-message>}
 // validate(inputValue)
 //   ==> <value> || {error: <validation-error-message>}
-//   NOTE: <value> is disregarded - any conversion must be done with sanitise().
+//   NOTE: Technically speaking, <value> is disregarded, as any conversion must
+//         be done with sanitise(). However, it is good practice to return a
+//         Value instance in case this functionality changes.
 function numberValidatorFactory(sanitise, validate) {
   if (sanitise == null) sanitise = (val) => val; // Does not sanitise
   if (validate == null) validate = (val) => true; // Always validates OK
@@ -201,7 +197,7 @@ function numberValidatorFactory(sanitise, validate) {
     const validation = validate(sanitised.value);
     if (validation.error !== undefined) return validation; // Return the error
 
-    return { value: sanitised.value }; // Return the value
+    return sanitised; // Return the value
   }
 }
 
@@ -374,9 +370,9 @@ const fieldForm = Object.freeze({
       },
       validator: function (inp) {
         if (dataTypeList.some((dataType) => dataType === inp)) {
-          return { value: inp };
+          return new Value(inp);
         } else {
-          return { error: "Data type not recognised: " + inp }
+          return new Value (null, "Data type not recognised: "+inp)
         }
       }
     },
@@ -432,9 +428,9 @@ const fieldForm = Object.freeze({
         },
         validator: function (inp) {
           if (intSequenceTypeList.some((seqType) => seqType === inp)) {
-            return { value: inp };
+            return new Value(inp);
           } else {
-            return { error: "Integer sequence type not recognised: " + inp }
+            return new Value (null, "Integer sequence type not recognised: "+inp)
           }
         }
       },
@@ -548,9 +544,9 @@ const fieldForm = Object.freeze({
         },
         validator: function (inp) {
           if (floatSequenceTypeList.some((seqType) => seqType === inp)) {
-            return { value: inp };
+            return new Value(inp);
           } else {
-            return { error: "Float sequence type not recognised: " + inp }
+            return new Value (null, "Float sequence type not recognised: "+inp)
           }
         }
       },

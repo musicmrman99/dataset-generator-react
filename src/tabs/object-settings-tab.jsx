@@ -2,6 +2,7 @@ import React from 'react';
 
 import { ObjectSettingsDefs } from '../types';
 import { Trees, TraversalConflictPriority, resolvePath, insertAtPath } from '../helpers/trees';
+import Value from '../helpers/value'
 
 export default class ObjectSettingsTab extends React.Component {
     constructor(props) {
@@ -110,9 +111,10 @@ export default class ObjectSettingsTab extends React.Component {
                     onBlur={(e) => {
                         let result = null;
                         if (inputInfo.validator !== undefined) {
+                            // Must produce a Value
                             result = inputInfo.validator(e.target.value)
                         } else {
-                            result = { value: e.target.value };
+                            result = new Value(e.target.value);
                         }
 
                         if (result.error != null) {
