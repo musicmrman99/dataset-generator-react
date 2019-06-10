@@ -236,6 +236,27 @@ const tableForm = Object.freeze({
 // Field Definitions
 // ==================================================
 
+const dataTypeList = [
+  "Null",
+  "Forename",
+  "Surname",
+  "Phone Number",
+  "Integer Sequence", // Has params
+  "Random Integer",  // Has params
+  "Float Sequence", // Has params
+  "Random Float", // Has params
+];
+
+const intSequenceTypeList = [
+  "Infinite",
+  "Looping"
+];
+
+const floatSequenceTypeList = [
+  "Infinite",
+  "Looping"
+];
+
 const fieldDefaults = Object.freeze({
   keySettings: {
     primaryKey: false,
@@ -247,11 +268,11 @@ const fieldDefaults = Object.freeze({
   },
 
   dataType: {
-    dataType: "null",
+    dataType: dataTypeList[0],
     intSequence: {
       start: 0,
       step: 1,
-      sequenceType: "infinite",
+      sequenceType: intSequenceTypeList[0],
       loopingSequenceParams: {
         loopAt: 0
       }
@@ -263,7 +284,7 @@ const fieldDefaults = Object.freeze({
     floatSequence: {
       start: 0,
       step: 1,
-      sequenceType: "infinite",
+      sequenceType: floatSequenceTypeList[0],
       loopingSequenceParams: {
         loopAt: 0
       }
@@ -275,27 +296,6 @@ const fieldDefaults = Object.freeze({
     }
   }
 });
-
-const dataTypeList = [
-  "null",
-  "forename",
-  "surname",
-  "phoneNumber",
-  "intSequence", // Has params
-  "intRandom",  // Has params
-  "floatSequence", // Has params
-  "floatRandom", // Has params
-];
-
-const intSequenceTypeList = [
-  "infinite",
-  "looping"
-];
-
-const floatSequenceTypeList = [
-  "infinite",
-  "looping"
-];
 
 const fieldForm = Object.freeze({
   // Key Settings
@@ -388,7 +388,7 @@ const fieldForm = Object.freeze({
       _index: 3,
       _depends: { // Depends
         path: ["dataType", "dataType"],
-        value: "intSequence"
+        value: "Integer Sequence"
       },
 
       "#int-sequence": {
@@ -442,7 +442,7 @@ const fieldForm = Object.freeze({
         _index: 5,
         _depends: { // Depends
           path: ["dataType", "intSequence", "sequenceType"],
-          value: "looping"
+          value: "Looping"
         },
 
         "#looping-int-sequence": {
@@ -471,7 +471,7 @@ const fieldForm = Object.freeze({
       _index: 4,
       _depends: { // Depends
         path: ["dataType", "dataType"],
-        value: "intRandom"
+        value: "Random Integer"
       },
 
       start: {
@@ -507,7 +507,7 @@ const fieldForm = Object.freeze({
       _index: 5,
       _depends: { // Depends
         path: ["dataType", "dataType"],
-        value: "floatSequence"
+        value: "Float Sequence"
       },
 
       start: {
@@ -558,7 +558,7 @@ const fieldForm = Object.freeze({
         _index: 5,
         _depends: { // Depends
           path: ["dataType", "floatSequence", "sequenceType"],
-          value: "looping"
+          value: "Looping"
         },
 
         "#looping-float-sequence": {
@@ -587,7 +587,7 @@ const fieldForm = Object.freeze({
       _index: 6,
       _depends: { // Depends
         path: ["dataType", "dataType"],
-        value: "floatRandom"
+        value: "Random Float"
       },
 
       start: {
