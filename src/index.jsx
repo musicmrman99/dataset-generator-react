@@ -414,6 +414,23 @@ const objectPropertiesOperations = Object.freeze({
     }
 });
 
+const pageManagement = Object.freeze({
+    // Based on https://stackoverflow.com/a/7317311
+    unloadHandler(shouldUnload, event) {
+        // Get the value
+        const result = shouldUnload();
+
+        // Then implement every single possible method of doing this
+        event.preventDefault(); // The new one - recommended by the standard
+        (event || window.event).returnValue = result; // A bit older
+        return result; // Very old
+    },
+
+    shouldPageUnload() {
+        return this.state.isUnsaved ? "do-not-unload" : undefined;
+    }
+});
+
 @DragDropContext(HTML5Backend)
 export default class App extends React.Component {
     constructor (props) {
@@ -421,7 +438,8 @@ export default class App extends React.Component {
 
         this.state = {
             tables: [],
-            currentObject: {type: null, path: null}
+            currentObject: {type: null, path: null},
+            isUnsaved: false
         }
 
         this.actions = {
@@ -438,6 +456,12 @@ export default class App extends React.Component {
             updateObjectName: objectPropertiesOperations.updateObjectName.bind(this),
             updateObjectSettings: objectPropertiesOperations.updateObjectSettings.bind(this)
         }
+
+        // NOTE: This can still be overriden by the user to discard changes.
+        this.shouldPageUnload = pageManagement.shouldPageUnload.bind(this);
+        window.addEventListener("beforeunload",
+            (e) => pageManagement.unloadHandler(this.shouldPageUnload, e)
+        );
     }
 
     render () {
@@ -453,7 +477,8 @@ export default class App extends React.Component {
     }
 }
 
+// Load the app into the 'real' DOM
 window.onload = function () {
     const main = document.getElementsByTagName("main")[0];
     ReactDOM.render(<App />, main);
-}
+};
