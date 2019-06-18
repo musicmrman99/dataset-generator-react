@@ -62,7 +62,6 @@ img {
 .span-10 { width: calc(100% / 12 * 10); }
 .span-12 { width: 100%; }
 
-.padded { padding: 10px; }
 .hidden { display: none; }
 
 label {
@@ -70,7 +69,7 @@ label {
     line-height: 1.4;
     margin-bottom: 0.4em;
 }
-input {
+input, select {
     margin: 0.2em;
 }
 
@@ -94,7 +93,8 @@ https://developer.mozilla.org/en-US/docs/Web/CSS/user-select */
 /* Header */
 
 header {
-    height: 60px;
+    height: 40px;
+    padding: 5px;
     background-color: #222222;
 }
 header p {
@@ -105,13 +105,14 @@ header p {
 
 /* Footer */
 
-#footer-overlap { height: 100px; }
+#footer-overlap { height: 30px; }
 footer {
 	position: absolute;
 	bottom: 0;
 	left: 0;
 	width: 100%;
-    height: 100px;
+    height: 40px;
+    padding: 5px;
 
     background-color: #222222;
 }

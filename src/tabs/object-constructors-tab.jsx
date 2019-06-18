@@ -26,21 +26,25 @@ import conditionalJoin from '../helpers/conditional-join';
     })
 )
 export default class ObjectConstructorsTab extends React.Component {
+    constructor (props) {
+        super(props);
+
+        this.TableType = ObjectConstructorDraggable(InteractableTypes.TABLE_CONSTRUCTOR);
+        this.FieldType = ObjectConstructorDraggable(InteractableTypes.FIELD_CONSTRUCTOR);
+    }
+
     render () {
         const dropTargetNode = this.props.dropTargetNode;
         const { canDrop, isOver } = this.props;
 
-        const TableType = ObjectConstructorDraggable(InteractableTypes.TABLE_CONSTRUCTOR);
-        const FieldType = ObjectConstructorDraggable(InteractableTypes.FIELD_CONSTRUCTOR);
-
         return dropTargetNode(
             <div className={conditionalJoin({
-                "tab-component dropzone": true,
+                "tab-component border-available": true,
                 "dropzone-delete-drag": canDrop,
                 "dropzone-delete-hover": isOver
             }, " ")}>
-                <TableType name="Table" imgSrc="table.png" />
-                <FieldType name="Field" imgSrc="field.png" />
+                <this.TableType name="Table" imgSrc="table.png" />
+                <this.FieldType name="Field" imgSrc="field.png" />
             </div>
         );
     }

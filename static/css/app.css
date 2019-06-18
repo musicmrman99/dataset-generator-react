@@ -1,11 +1,14 @@
-/* Content (high-level) */
+/*
+Content (high-level)
+--------------------
+*/
 
 .content {
     position: relative;
     width: 100%;
     /* 60px and 100px are the sizes of the header and footer.
     If these change, UPDATE THIS CSS or usability will suffer! */
-    height: calc(100vh - 60px - 100px);
+    height: calc(100vh - 40px - 40px);
 }
 
 .panel {
@@ -42,7 +45,10 @@
     background-color: #f0f0f0;
 }
 
-/* Objects and Object Types */
+/*
+Objects and Object Types
+--------------------
+*/
 
 .object-type {
     background-color: #c0c0c0;
@@ -76,9 +82,17 @@
     background-color: #c0c0c0;
 }
 
-/* Drag and Drop States */
+/*
+Object States
+--------------------
+*/
 
-.dropzone { border: 2px dashed transparent; }
+.border-available { border: 2px dashed transparent; }
+
+/* Current Object */
+.current-object { border-color: #000000; }
+
+/* Drag and Drop */
 .dropzone-create-drag { border-color: #7971df; }
 .dropzone-create-hover { border-color: #2a1ddb; }
 .dropzone-move-drag { border-color: #79df71; }

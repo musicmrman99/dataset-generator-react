@@ -222,8 +222,19 @@ const objectOperations = Object.freeze({
     }
 });
 
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// WARNING: DO NOT USE NON-PRIVATE METHODS STAND-ALONE
+// - non-private methods must be bound to App's 'this'
+// - private methods must be called in the style:
+//     currentObjectManagement._privateMethod()
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 const currentObjectManagement = Object.freeze({
     setCurrentObject(objectType, objectPath) {
+        // If objectType is not in ObjectTypes, which should (hopefully) never happen
+        if (!Object.values(ObjectTypes).some((type) => type === objectType)) {
+            throw new Error("Invalid object type (setCurrentObject()): "+objectType);
+        }
+
         const path = pathHelpers.split_path(objectPath);
         const [tableName, fieldName] = path; // some of these may be 'undefined'
 
@@ -239,6 +250,9 @@ const currentObjectManagement = Object.freeze({
         });
     },
 
+    // If someone uses this to edit the current object, then they'll get what
+    // they deserve - a lot of problems. It's called ***GET*** for a reason! :)
+    // (See 'setCurrentObject()' for a safe way)
     getCurrentObject() {
         return this.state.currentObject;
     },
@@ -246,10 +260,8 @@ const currentObjectManagement = Object.freeze({
     resolveCurrentObject() {
         const curObjInfo = this.state.currentObject;
 
-        const recognisedTypes = [ObjectTypes.TABLE, ObjectTypes.FIELD];
-        if (!recognisedTypes.some(type => type === curObjInfo.type)) {
-            return null;
-        }
+        // Don't need to check if the object type in curObjInfo is valid, as
+        // this is checked when it is set.
 
         // It's always going to need to dereference the table part.
         const tableIndex = this.state.tables.findIndex(
@@ -402,6 +414,23 @@ const objectPropertiesOperations = Object.freeze({
     }
 });
 
+const pageManagement = Object.freeze({
+    // Based on https://stackoverflow.com/a/7317311
+    unloadHandler(shouldUnload, event) {
+        // Get the value
+        const result = shouldUnload();
+
+        // Then implement every single possible method of doing this
+        event.preventDefault(); // The new one - recommended by the standard
+        (event || window.event).returnValue = result; // A bit older
+        return result; // Very old
+    },
+
+    shouldPageUnload() {
+        return this.state.isUnsaved ? "do-not-unload" : undefined;
+    }
+});
+
 @DragDropContext(HTML5Backend)
 export default class App extends React.Component {
     constructor (props) {
@@ -409,7 +438,8 @@ export default class App extends React.Component {
 
         this.state = {
             tables: [],
-            currentObject: {type: null, path: null}
+            currentObject: {type: null, path: null},
+            isUnsaved: false
         }
 
         this.actions = {
@@ -426,19 +456,29 @@ export default class App extends React.Component {
             updateObjectName: objectPropertiesOperations.updateObjectName.bind(this),
             updateObjectSettings: objectPropertiesOperations.updateObjectSettings.bind(this)
         }
+
+        // NOTE: This can still be overriden by the user to discard changes.
+        this.shouldPageUnload = pageManagement.shouldPageUnload.bind(this);
+        window.addEventListener("beforeunload",
+            (e) => pageManagement.unloadHandler(this.shouldPageUnload, e)
+        );
     }
 
     render () {
         return (
             <div className="content span-container">
                 <Panel tables={this.state.tables} actions={this.actions} />
-                <Workspace tables={this.state.tables} actions={this.actions} />
+                <Workspace
+                    tables={this.state.tables}
+                    currentObject={this.state.currentObject}
+                    actions={this.actions} />
             </div>
         );
     }
 }
 
+// Load the app into the 'real' DOM
 window.onload = function () {
     const main = document.getElementsByTagName("main")[0];
     ReactDOM.render(<App />, main);
-}
+};
