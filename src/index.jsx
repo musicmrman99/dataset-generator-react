@@ -417,13 +417,13 @@ const objectPropertiesOperations = Object.freeze({
 const pageManagement = Object.freeze({
     // Based on https://stackoverflow.com/a/7317311
     unloadHandler(shouldUnload, event) {
-        // Get the value
         const result = shouldUnload();
-
-        // Then implement every single possible method of doing this
-        event.preventDefault(); // The new one - recommended by the standard
-        (event || window.event).returnValue = result; // A bit older
-        return result; // Very old
+        if (result) {
+            // Just implement every single possible method of doing this
+            event.preventDefault(); // The new one - recommended by the standard
+            (event || window.event).returnValue = result; // A bit older
+            return result; // Very old
+        }
     },
 
     shouldPageUnload() {
