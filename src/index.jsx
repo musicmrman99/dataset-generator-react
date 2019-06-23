@@ -226,30 +226,63 @@ const objectOperations = Object.freeze({
 // WARNING: DO NOT USE NON-PRIVATE METHODS STAND-ALONE
 // - non-private methods must be bound to App's 'this'
 // - private methods must be called in the style:
-//     currentObjectManagement._privateMethod()
+//     objectReferenceManagement._privateMethod()
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-const currentObjectManagement = Object.freeze({
-    setCurrentObject(objectType, objectPath) {
-        // If objectType is not in ObjectTypes, which should (hopefully) never happen
-        if (!Object.values(ObjectTypes).some((type) => type === objectType)) {
-            throw new Error("Invalid object type (setCurrentObject()): "+objectType);
-        }
-
-        const path = pathHelpers.split_path(objectPath);
-        const [tableName, fieldName] = path; // some of these may be 'undefined'
-
-        if (objectType === ObjectTypes.TABLE || objectType === ObjectTypes.FIELD) {
-            assert.tableExists(this.state.tables, tableName);
-        }
-        if (objectType === ObjectTypes.FIELD) {
-            assert.fieldExists(this.state.tables, tableName, fieldName);
-        }
-
-        this.setState({
-            currentObject: Object.freeze({type: objectType, path: path})
+const objectReferenceManagement = Object.freeze({
+    _objRef(objType, objPath) {
+        return Object.freeze({
+            type: objType,
+            path: pathHelpers.split_path(objPath)
         });
     },
 
+    _checkValid(objRef) {
+        // Check the object type
+        // If objRef.type is not in ObjectTypes, which should (hopefully) never happen
+        if (!Object.values(ObjectTypes).some((type) => type === objRef.type)) {
+            throw new Error("Invalid object type (setCurrentObject()): "+objRef.type);
+        }
+
+        // Check the object path
+        // Some of these may be 'undefined', depending on the object type
+        const [tableName, fieldName] = objRef.path;
+
+        if (objRef.type === ObjectTypes.TABLE || objRef.type === ObjectTypes.FIELD) {
+            assert.tableExists(this.state.tables, tableName);
+        }
+        if (objRef.type === ObjectTypes.FIELD) {
+            assert.fieldExists(this.state.tables, tableName, fieldName);
+        }
+    },
+
+    getObject(objType, objPath) {
+        const objRef = objectReferenceManagement._objRef.apply(this, [objType, objPath]);
+        objectReferenceManagement._checkValid.apply(this, [objRef]);
+        return objRef;
+    },
+
+    resolveObject(objRef) {
+        // It's always going to need to dereference the table part.
+        const tableIndex = this.state.tables.findIndex(
+            (table) => table.name === objRef.path[0]);
+        const table = this.state.tables[tableIndex];
+        if (objRef.type === ObjectTypes.TABLE) return table;
+
+        // Next, dereference the field
+        const fieldIndex = table.fields.findIndex(
+            (field) => field.name === objRef.path[1]);
+        const field = table.fields[fieldIndex];
+        if (objRef.type === ObjectTypes.FIELD) return field;
+    }
+});
+
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// WARNING: DO NOT USE NON-PRIVATE METHODS STAND-ALONE
+// - non-private methods must be bound to App's 'this'
+// - private methods must be called in the style:
+//     currentObjectManagement._privateMethod()
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+const currentObjectManagement = Object.freeze({
     // If someone uses this to edit the current object, then they'll get what
     // they deserve - a lot of problems. It's called ***GET*** for a reason! :)
     // (See 'setCurrentObject()' for a safe way)
@@ -258,22 +291,18 @@ const currentObjectManagement = Object.freeze({
     },
 
     resolveCurrentObject() {
-        const curObjInfo = this.state.currentObject;
+        return objectReferenceManagement.resolveObject.apply(
+            this, [this.state.currentObject]
+        );
+    },
 
-        // Don't need to check if the object type in curObjInfo is valid, as
-        // this is checked when it is set.
-
-        // It's always going to need to dereference the table part.
-        const tableIndex = this.state.tables.findIndex(
-            (table) => table.name === curObjInfo.path[0]);
-        const table = this.state.tables[tableIndex];
-        if (curObjInfo.type === ObjectTypes.TABLE) return table;
-
-        // Next, dereference the field
-        const fieldIndex = table.fields.findIndex(
-            (field) => field.name === curObjInfo.path[1]);
-        const field = table.fields[fieldIndex];
-        if (curObjInfo.type === ObjectTypes.FIELD) return field;
+    // You can also set the current object (which you can't )
+    setCurrentObject(objectType, objectPath) {
+        this.setState({
+            currentObject: objectReferenceManagement.getObject.apply(
+                this, [objectType, objectPath]
+            )
+        });
     }
 });
 
@@ -449,6 +478,8 @@ export default class App extends React.Component {
             deleteField: objectOperations.deleteField.bind(this),
             moveField: objectOperations.moveField.bind(this),
 
+            getObject: objectReferenceManagement.getObject.bind(this),
+            resolveObject: objectReferenceManagement.resolveObject.bind(this),
             setCurrentObject: currentObjectManagement.setCurrentObject.bind(this),
             getCurrentObject: currentObjectManagement.getCurrentObject.bind(this),
             resolveCurrentObject: currentObjectManagement.resolveCurrentObject.bind(this),
