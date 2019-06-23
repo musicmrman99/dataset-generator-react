@@ -23,8 +23,8 @@ export default class Workspace extends React.Component {
         const { canDrop, isOver } = this.props;
 
         // About the 'key' prop: https://reactjs.org/docs/lists-and-keys.html
-        const tables = this.props.tables.map((table) =>
-            <Table key={table.name} name={table.name}
+        const tables = this.props.tables.map((table, tableIndex) =>
+            <Table key={tableIndex} name={table.name}
                 settings={table.settings} fields={table.fields}
                 currentObject={this.props.currentObject}
                 actions={this.props.actions} />)

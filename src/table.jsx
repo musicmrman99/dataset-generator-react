@@ -33,14 +33,20 @@ import conditionalJoin from './helpers/conditional-join';
     })
 )
 export default class Table extends React.Component {
+    updateName (newName) {
+        this.props.actions.updateObjectName(
+            this.props.actions.getObject(ObjectTypes.TABLE, this.props.name), newName
+        );
+    }
+
     render () {
         const [dragSourceNode, dropTargetNode] =
             [this.props.dragSourceNode, this.props.dropTargetNode];
         const { sourceType, canDrop, isOver } = this.props;
 
         // About the 'key' prop: https://reactjs.org/docs/lists-and-keys.html
-        const fields = this.props.fields.map((field) =>
-            <Field key={field.name} name={field.name}
+        const fields = this.props.fields.map((field, fieldIndex) =>
+            <Field key={fieldIndex} name={field.name}
                 settings={field.settings} tableName={this.props.name}
                 currentObject={this.props.currentObject}
                 actions={this.props.actions} />)
@@ -58,7 +64,14 @@ export default class Table extends React.Component {
                 event.stopPropagation();
                 this.props.actions.setCurrentObject(ObjectTypes.TABLE, this.props.name);
             }}>
-                <span>Name: tbl{this.props.name}</span>
+                <span>Name: tbl<input
+                    type="text"
+                    value={this.props.name}
+                    onChange={(event) => {
+                        this.updateName(event.target.value);
+                    }}
+                    onClick={(event) => event.stopPropagation() /*Don't bubble*/}>
+                </input></span>
                 <hr />
                 {dropTargetNode(
                     <div className={conditionalJoin({

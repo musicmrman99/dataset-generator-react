@@ -16,6 +16,15 @@ import conditionalJoin from './helpers/conditional-join';
     (connect, monitor) => ({ dragSourceNode: connect.dragSource() })
 )
 export default class Field extends React.Component {
+    updateName (newName) {
+        this.props.actions.updateObjectName(
+            this.props.actions.getObject(
+                ObjectTypes.FIELD,
+                [this.props.tableName, this.props.name].join("/")
+            ), newName
+        );
+    }
+
     render () {
         const dragSourceNode = this.props.dragSourceNode;
         return dragSourceNode(
@@ -34,7 +43,14 @@ export default class Field extends React.Component {
                     [this.props.tableName, this.props.name].join("/")
                 );
             }}>
-                <span>Name: {this.props.name}</span>
+                <span>Name: <input
+                    type="text"
+                    value={this.props.name}
+                    onChange={(event) => {
+                        this.updateName(event.target.value);
+                    }}
+                    onClick={(event) => event.stopPropagation() /*Don't bubble*/}>
+                </input></span>
             </div>
         )
     }
