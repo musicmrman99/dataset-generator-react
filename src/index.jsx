@@ -75,7 +75,7 @@ function getUniqueName (fullName, set) {
 const assert = Object.freeze({
     // Ensure the table exists (this should never fail, but you never know)
     tableExists (tables, tableName) {
-        const tableExists = Boolean(tables.find((checkTable) => checkTable.name === tableName));
+        const tableExists = Boolean(tables.find((checkTable) => checkTable.name === tableName) != undefined);
         if (!tableExists) {
             throw Error("No such table '"+tableName+"'");
         }
@@ -84,7 +84,7 @@ const assert = Object.freeze({
     // Ensure the given field in the given table exists (this should never fail, but you never know)
     fieldExists (tables, tableName, fieldName) {
         const table = tables.find((table) => table.name === tableName);
-        const fieldExists = Boolean(table.fields.find((checkField) => checkField.name === fieldName));
+        const fieldExists = Boolean(table.fields.find((checkField) => checkField.name === fieldName) != undefined);
         if (!fieldExists) {
             throw Error("No such field '"+fieldName+"'");
         }
@@ -334,12 +334,7 @@ const objectPropertiesOperations = Object.freeze({
     },
 
     _updateTableName(tableName, newName) {
-        // Ensure the table exists (this should never fail, but you never know)
-        const tableNames = this.state.tables.map((table) => table.name);
-        const tableExists = Boolean(tableNames.find((checkTableName) => checkTableName === tableName));
-        if (!tableExists) {
-            throw Error("No such table '"+tableName+"'");
-        }
+        assert.tableExists(this.state.tables, tableName);
 
         // Ensure that the new name is unique
         newName = getUniqueName(newName,
@@ -355,12 +350,7 @@ const objectPropertiesOperations = Object.freeze({
     },
 
     _updateTableSettings(tableName, newSettings) {
-        // Ensure the table exists (this should never fail, but you never know)
-        const tableNames = this.state.tables.map((table) => table.name);
-        const tableExists = Boolean(tableNames.find((checkTableName) => checkTableName === tableName));
-        if (!tableExists) {
-            throw Error("No such table '"+tableName+"'");
-        }
+        assert.tableExists(this.state.tables, tableName);
 
         const newTables = this.state.tables.slice();
         const tableIndex = newTables.findIndex((table) => table.name === tableName);
