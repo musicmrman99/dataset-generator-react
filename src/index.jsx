@@ -9,7 +9,7 @@ import Workspace from './workspace';
 
 import { ObjectTypes, ObjectSettingsDefs } from './types';
 import { Trees, Selectors, TraversalConflictPriority, isSpecialNode } from './helpers/trees';
-import pathHelpers from './helpers/path';
+import pathHelpers, { Slashes } from './helpers/path';
 import ResourceManager from './helpers/resource-manager';
 window.resourceManager = new ResourceManager();
 
@@ -232,7 +232,7 @@ const objectReferenceManagement = Object.freeze({
     _objRef(objType, objPath) {
         return Object.freeze({
             type: objType,
-            path: pathHelpers.split_path(objPath)
+            path: pathHelpers.split_path(objPath, Slashes.LEADING)
         });
     },
 
