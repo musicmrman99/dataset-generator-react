@@ -2,6 +2,7 @@ import React from 'react';
 import Field from './field';
 
 import { DragSource, DropTarget } from 'react-dnd';
+import { FDnDConnectDragSource, FDnDExcludeDrag } from './generics/flexible-dnd';
 import { InteractableTypes, ObjectTypes } from './types';
 import conditionalJoin from './helpers/conditional-join';
 
@@ -11,7 +12,7 @@ import conditionalJoin from './helpers/conditional-join';
             return { tableName: props.name };
         }
     },
-    (connect, monitor) => ({ dragSourceNode: connect.dragSource() })
+    (connect, monitor) => ({ dragSourceNode: FDnDConnectDragSource(connect.dragSource()) })
 )
 @DropTarget([InteractableTypes.FIELD_CONSTRUCTOR, InteractableTypes.FIELD],
     {
@@ -64,14 +65,14 @@ export default class Table extends React.Component {
                 event.stopPropagation();
                 this.props.actions.setCurrentObject(ObjectTypes.TABLE, this.props.name);
             }}>
-                <span>Name: tbl<input
+                <span>Name: tbl{FDnDExcludeDrag(<input
                     type="text"
                     value={this.props.name}
                     onChange={(event) => {
                         this.updateName(event.target.value);
                     }}
                     onClick={(event) => event.stopPropagation() /*Don't bubble*/}>
-                </input></span>
+                </input>)}</span>
                 <hr />
                 {dropTargetNode(
                     <div className={conditionalJoin({

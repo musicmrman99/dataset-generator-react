@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 
 import { DragDropContext } from 'react-dnd';
 import HTML5Backend from 'react-dnd-html5-backend';
+import { FlexibleDragDropContext } from  './generics/flexible-dnd';
 
 import Panel from './panel';
 import Workspace from './workspace';
@@ -451,6 +452,7 @@ const pageManagement = Object.freeze({
 });
 
 @DragDropContext(HTML5Backend)
+@FlexibleDragDropContext
 export default class App extends React.Component {
     constructor (props) {
         super(props);
