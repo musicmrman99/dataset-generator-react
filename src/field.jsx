@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { DragSource } from 'react-dnd';
+import { FDnDConnectDragSource, FDnDExcludeDrag } from './generics/flexible-dnd';
 import { InteractableTypes, ObjectTypes } from './types';
 import conditionalJoin from './helpers/conditional-join';
 
@@ -13,7 +14,7 @@ import conditionalJoin from './helpers/conditional-join';
             };
         }
     },
-    (connect, monitor) => ({ dragSourceNode: connect.dragSource() })
+    (connect, monitor) => ({ dragSourceNode: FDnDConnectDragSource(connect.dragSource()) })
 )
 export default class Field extends React.Component {
     updateName (newName) {
@@ -43,14 +44,14 @@ export default class Field extends React.Component {
                     [this.props.tableName, this.props.name].join("/")
                 );
             }}>
-                <span>Name: <input
+                <span>Name: {FDnDExcludeDrag(<input
                     type="text"
                     value={this.props.name}
                     onChange={(event) => {
                         this.updateName(event.target.value);
                     }}
                     onClick={(event) => event.stopPropagation() /*Don't bubble*/}>
-                </input></span>
+                </input>)}</span>
             </div>
         )
     }

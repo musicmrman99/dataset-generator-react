@@ -1,6 +1,8 @@
 import React from 'react';
 import { DragSource } from 'react-dnd';
 
+import { FDnDConnectDragSource } from '../../generics/flexible-dnd';
+
 // NOTE: This module assumes that 'resourceManager' is global.
 //       This is likely to be set in index.jsx
 
@@ -45,7 +47,7 @@ export function ObjectConstructorDraggable (objectConstructorDndType) {
                 return {};
             }
         },
-        (connect, monitor) => ({ dragSourceNode: connect.dragSource() })
+        (connect, monitor) => ({ dragSourceNode: FDnDConnectDragSource(connect.dragSource()) })
     )
     class _ObjectConstructorDraggable extends React.Component {
         render () {

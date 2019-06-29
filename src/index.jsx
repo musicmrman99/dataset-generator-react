@@ -3,13 +3,14 @@ import ReactDOM from 'react-dom';
 
 import { DragDropContext } from 'react-dnd';
 import HTML5Backend from 'react-dnd-html5-backend';
+import { FlexibleDragDropContext } from  './generics/flexible-dnd';
 
 import Panel from './panel';
 import Workspace from './workspace';
 
 import { ObjectTypes, ObjectSettingsDefs } from './types';
 import { Trees, Selectors, TraversalConflictPriority, isSpecialNode } from './helpers/trees';
-import pathHelpers from './helpers/path';
+import pathHelpers, { Slashes } from './helpers/path';
 import ResourceManager from './helpers/resource-manager';
 window.resourceManager = new ResourceManager();
 
@@ -232,7 +233,7 @@ const objectReferenceManagement = Object.freeze({
     _objRef(objType, objPath) {
         return Object.freeze({
             type: objType,
-            path: pathHelpers.split_path(objPath)
+            path: pathHelpers.split_path(objPath, Slashes.LEADING)
         });
     },
 
@@ -451,6 +452,7 @@ const pageManagement = Object.freeze({
 });
 
 @DragDropContext(HTML5Backend)
+@FlexibleDragDropContext
 export default class App extends React.Component {
     constructor (props) {
         super(props);
