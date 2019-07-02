@@ -56,7 +56,7 @@ def get_resource():
 
 @app.route("/")
 def index():
-    return flask.render_template("index.html", version='0.1')
+    return flask.render_template("index.html", version='0.2')
 
 
 if __name__ == "__main__":
