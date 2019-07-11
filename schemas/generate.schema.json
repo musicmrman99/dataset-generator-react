@@ -1,0 +1,136 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$comment": "'$id' is dynamically generated",
+
+  "definitions": {
+    "general-settings": {
+      "type": "object",
+      "properties": {
+        "generator": {
+          "description": "A string defining the generator to use. Passing the empty string (\"\") defaults to 'multi-table'.",
+          "enum": ["multi-table", "single-table", ""]
+        }
+      },
+      "required": ["generator"]
+    },
+
+    "table": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "settings": { "$ref": "#/definitions/table-settings" },
+        "fields": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/field" }
+        }
+      },
+      "required": ["name", "settings", "fields"]
+    },
+
+    "table-settings": {
+      "type": "object",
+      "properties": {
+        "numRecords": { "type": "integer" }
+      },
+      "required": ["numRecords"]
+    },
+
+    "field": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "settings": { "$ref": "#/definitions/field-settings" }
+      },
+      "required": ["name", "settings"]
+    },
+
+    "field-settings": {
+      "type": "object",
+      "properties": {
+        "keySettings": {
+          "type": "object",
+          "properties": {
+            "primaryKey": { "type": "boolean" },
+            "foreignKey": { "type": "boolean" },
+            "foreignKeyParams": {
+              "$ref": "#/definitions/foreignKeyParams"
+            }
+          },
+          "required": ["primaryKey", "foreignKey"]
+        },
+        "dataType": {
+          "type": "object",
+          "properties": {
+            "dataType": { "type": "string" },
+            "numberSequence": {
+              "$ref": "#/definitions/numberSequence"
+            },
+            "randomNumber": {
+              "$ref": "#/definitions/randomNumber"
+            }
+          },
+          "required": ["dataType"]
+        }
+      },
+      "required": ["keySettings", "dataType"]
+    },
+
+    "foreignKeyParams": {
+      "$comment": "--- Optional ---",
+
+      "type": "object",
+      "properties": {
+        "table": { "type": "string" },
+        "field": { "type": "string" }
+      },
+      "required": ["table", "field"]
+    },
+
+    "numberSequence": {
+      "$comment": "--- Optional ---",
+
+      "type": "object",
+      "properties": {
+        "start": { "type": "number" },
+        "step": { "type": "number" },
+        "sequenceType": { "type": "string" },
+        "loopingSequenceParams": {
+          "$ref": "#/definitions/loopingSequenceParams"
+        }
+      },
+      "required": ["start", "step", "sequenceType"]
+    },
+
+    "loopingSequenceParams": {
+      "$comment": "--- Optional ---",
+
+      "type": "object",
+      "properties": {
+        "loopAt": { "type": "number" }
+      },
+      "required": ["loopAt"]
+    },
+
+    "randomNumber": {
+      "$comment": "--- Optional ---",
+
+      "type": "object",
+      "properties": {
+        "start": { "type": "number" },
+        "end": { "type": "number" },
+        "round": { "type": "number" }
+      },
+      "required": ["start", "end", "round"]
+    }
+  },
+
+  "type": "object",
+  "properties": {
+    "general": { "$ref": "#/definitions/general-settings" },
+    "tables": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/table" }
+    }
+  },
+  "required": ["general", "tables"]
+}
