@@ -57,8 +57,6 @@ def get_schema(**url_vars):
         schema = schemas.Schema(url_vars["name"])
     except FileNotFoundError:
         return "", 404 # NOT FOUND
-    except jsonschema.exceptions.ValidationError:
-        return "", 400 # BAD REQUEST
 
     return json.dumps(schema.get())
 
