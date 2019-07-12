@@ -5,7 +5,7 @@ import os.path
 import json
 import jsonschema
 from components import schemas
-from components.additional_validators import AdditionalValidators
+from components.additional_validators import AdditionalValidators, AdditionalValidationError
 
 from components import consts
 import flask
@@ -75,11 +75,28 @@ generate_schema = schemas.Schema("/generate")
 def generate():
     global generate_schema
 
+    generate_spec = flask.request.get_json()
+
     # Validate the provided generation spec (ie. instructions for what things to
     # generate and how to generate them)
-    generate_spec = flask.request.get_json()
-    generate_schema.validate(generate_spec)
-    AdditionalValidators.validate_all(generate_spec, generate_schema)
+    try:
+        generate_schema.validate(generate_spec)
+        AdditionalValidators.validate_all(generate_spec, generate_schema)
+
+    except (jsonschema.exceptions.ValidationError, AdditionalValidationError):
+        # If validation failed, then this request was not processable, even if
+        # it is a properly formed HTTP request with a properly formed JSON body.
+        # https://www.vinaysahni.com/best-practices-for-a-pragmatic-restful-api
+        return "", 422 # UNPROCESSABLE ENTITY
+
+    except jsonschema.exceptions.RefResolutionError:
+        # If the $ref properties in the schema cannot be interpreted by fetching
+        # resources, then this service cannot validate its input. Therefore, the
+        # service cannot reasonably be supplied at this time. This condition is
+        # likely temporary, but how long it will take to resolve is unknown (so
+        # no 'Retry-After' header can be sent).
+        # See: https://stackoverflow.com/a/25398605
+        return "", 503 # SERVICE UNAVAILABLE
 
     # For now, just return if the JSON validates
     return "true"
