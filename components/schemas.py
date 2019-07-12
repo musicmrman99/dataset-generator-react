@@ -131,9 +131,9 @@ class Schema:
             )
 
         # See: https://www.peterbe.com/plog/jsonschema-validate-10x-faster-in-python
-        _validator_class = jsonschema.validators.validator_for(self._schema)
-        _validator_class.check_schema(self._schema)
-        self._validator = _validator_class(self._schema)
+        validator_class = jsonschema.validators.validator_for(self._schema)
+        validator_class.check_schema(self._schema)
+        self._validator = validator_class(self._schema)
 
     def get(self):
         """
@@ -189,7 +189,7 @@ class Schema:
     def validate(self, obj):
         """Validate the given parsed JSON obj(ect) against this schema."""
 
-        return self._validator.is_valid(obj)
+        return self._validator.validate(obj)
 
 # Notes
 # --------------------------------------------------
