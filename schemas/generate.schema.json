@@ -6,12 +6,11 @@
     "general-settings": {
       "type": "object",
       "properties": {
-        "generator": {
-          "description": "A string defining the generator to use. Passing the empty string (\"\") defaults to 'multi-table'.",
-          "enum": ["multi-table", "single-table", ""]
+        "output-format": {
+          "enum": ["multi-table", "single-table"]
         }
       },
-      "required": ["generator"]
+      "required": ["output-format"]
     },
 
     "table": {
