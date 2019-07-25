@@ -1,4 +1,5 @@
 import jsonschema
+from components import exceptions
 
 # Format Key-Value pair
 def fkv(key, val):
@@ -6,9 +7,6 @@ def fkv(key, val):
 
 def formatDict(dict_, order):
     return "{"+[fkv(key, dict_[key]) for key in order].join(", ")+"}"
-
-class AdditionalValidationError(ValueError):
-    pass
 
 # ... I was spoiled by JS ...
 class AdditionalValidators:
@@ -69,7 +67,7 @@ class AdditionalValidators:
     @classmethod
     def validate_field_settings_optional_components(cls, generate_spec):
         """
-        Raise AdditionalValidationError if validation fails.
+        Raise BadSpecificationError if validation fails.
         """
 
         def for_each_field():
@@ -109,7 +107,7 @@ class AdditionalValidators:
             context_str = formatDict(
                 {"table": table["name"], "field": field["name"]},
                 ["table", "field"])
-            raise AdditionalValidationError(
+            raise exceptions.BadSpecificationError(
                 "foreignKeyParams missing from "+context_str+", "+
                 "dispite foreignKey being True")
 
@@ -141,7 +139,7 @@ class AdditionalValidators:
             context_str = formatDict(
                 {"table": table["name"], "field": field["name"]},
                 ["table", "field"])
-            raise AdditionalValidationError(
+            raise exceptions.BadSpecificationError(
                 "numberSequence missing from "+context_str+", "+
                 "dispite dataType being 'numberSequence'")
 
@@ -174,7 +172,7 @@ class AdditionalValidators:
             context_str = formatDict(
                 {"table": table["name"], "field": field["name"]},
                 ["table", "field"])
-            raise AdditionalValidationError(
+            raise exceptions.BadSpecificationError(
                 "randomNumber missing from "+context_str+", "+
                 "dispite dataType being 'randomNumber'")
 
@@ -208,7 +206,7 @@ class AdditionalValidators:
             context_str = formatDict(
                 {"table": table["name"], "field": field["name"]},
                 ["table", "field"])
-            raise AdditionalValidationError(
+            raise exceptions.BadSpecificationError(
                 "loopingSequenceParams missing from "+context_str+", "+
                 "dispite sequenceType being 'looping'")
 

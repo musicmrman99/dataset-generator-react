@@ -1,0 +1,2 @@
+class BadSpecificationError(ValueError):
+    pass

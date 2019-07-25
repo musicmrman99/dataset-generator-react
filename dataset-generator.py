@@ -1,13 +1,17 @@
 # NOTE: use sqlite3
 # NOTE: use sqlalchemy?
 
+# General
 import os.path
 import json
 import jsonschema
 from components import schemas
-from components.additional_validators import AdditionalValidators, AdditionalValidationError
 
-from components import consts
+# Specific
+from components import exceptions, consts, generate
+from components.additional_validators import AdditionalValidators
+
+# Flask
 import flask
 app = flask.Flask(__name__)
 
@@ -70,7 +74,7 @@ dataAPI = consts.APIs["data"]
 generate_schema = schemas.Schema("/generate")
 
 @app.route(os.path.normpath(dataAPI["route"] + "/generate"), methods=["POST"])
-def generate():
+def generate_endpoint():
     global generate_schema
 
     generate_spec = flask.request.get_json()
@@ -81,7 +85,10 @@ def generate():
         generate_schema.validate(generate_spec)
         AdditionalValidators.validate_all(generate_spec, generate_schema)
 
-    except (jsonschema.exceptions.ValidationError, AdditionalValidationError):
+    except (
+        jsonschema.exceptions.ValidationError,
+        exceptions.BadSpecificationError
+    ):
         # If validation failed, then this request was not processable, even if
         # it is a properly formed HTTP request with a properly formed JSON body.
         # https://www.vinaysahni.com/best-practices-for-a-pragmatic-restful-api
@@ -96,8 +103,14 @@ def generate():
         # See: https://stackoverflow.com/a/25398605
         return "", 503 # SERVICE UNAVAILABLE
 
-    # For now, just return if the JSON validates
-    return "true"
+    # Generate the tables according to the generation spec
+    generated_tables = generate.generate_tables(generate_spec["tables"])
+
+    # FIXME: For now, just return the raw generated data structure
+    output_format = generate_spec["general"]["output-format"]
+    if output_format == "multi-table":
+        return json.dumps(generated_tables)
+    # TODO: support single-table
 
 # Index Page
 # --------------------------------------------------
