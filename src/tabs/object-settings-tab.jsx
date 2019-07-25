@@ -80,20 +80,20 @@ export default class ObjectSettingsTab extends React.Component {
             // (Get your head around that if you can.) I didn't want to manually
             // '.bind()' - ugly thing.
 
-            const updateDontValidate = (event, propName) => {
+            const updateDontValidate = (value) => {
                 this.props.actions.updateObjectSettings(
                     curObjInfo,
-                    insertAtPath({}, settingPath, event.target[propName], true)
+                    insertAtPath({}, settingPath, value, true)
                 );
             }
 
-            const updateAfterValidate = (event, propName) => {
+            const updateAfterValidate = (value) => {
                 let result = null;
                 if (inputInfo.validator !== undefined) {
                     // Must produce a Value
-                    result = inputInfo.validator(event.target[propName]);
+                    result = inputInfo.validator(value);
                 } else {
-                    result = new Value(event.target[propName]);
+                    result = new Value(value);
                 }
 
                 if (result.error != null) {
@@ -126,8 +126,8 @@ export default class ObjectSettingsTab extends React.Component {
                 inputElement = (<input
                     type={inputInfo.type}
                     value={settingVal}
-                    onChange={(e) => updateDontValidate(e, "value")}
-                    onBlur={(e) => updateAfterValidate(e, "value")}
+                    onChange={(e) => updateDontValidate(e.target.value)}
+                    onBlur={(e) => updateAfterValidate(e.target.value)}
                     {...inputInfo.attrs}>
                 </input>);
                 break;
@@ -141,11 +141,14 @@ export default class ObjectSettingsTab extends React.Component {
                 inputElement = (<input
                     type={inputInfo.type}
                     value={settingVal}
-                    onChange={(e) => updateDontValidate(e, "valueAsNumber")}
-                    onBlur={(e) => updateAfterValidate(e, "valueAsNumber")}
+                    onChange={(e) => updateDontValidate(e.target.value)}
+                    onBlur={(e) => updateAfterValidate(
+                         // convert to float for validation
+                        parseFloat(e.target.value)
+                    )}
                     {...inputInfo.attrs}>
                 </input>);
-                break;    
+                break;
 
             // For checkboxes, use the "checked" attribute instead of its value.
             // Also, it dosn't need a validator for something that the HTML
@@ -154,7 +157,7 @@ export default class ObjectSettingsTab extends React.Component {
                 inputElement = (<input
                     type={inputInfo.type}
                     checked={settingVal}
-                    onChange={(e) => updateDontValidate(e, "checked")}
+                    onChange={(e) => updateDontValidate(e.target.checked)}
                     {...inputInfo.attrs}>
                 </input>);
                 break;
@@ -171,7 +174,7 @@ export default class ObjectSettingsTab extends React.Component {
     
                 inputElement = (<select
                     value={settingVal}
-                    onChange={(e) => updateDontValidate(e, "value")}
+                    onChange={(e) => updateDontValidate(e.target.value)}
                     {...inputInfo.attrs}>
                     {optionElements}
                 </select>);
