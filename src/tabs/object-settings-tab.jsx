@@ -80,20 +80,20 @@ export default class ObjectSettingsTab extends React.Component {
             // (Get your head around that if you can.) I didn't want to manually
             // '.bind()' - ugly thing.
 
-            const updateDontValidate = (event, propName) => {
+            const updateDontValidate = (value) => {
                 this.props.actions.updateObjectSettings(
                     curObjInfo,
-                    insertAtPath({}, settingPath, event.target[propName], true)
+                    insertAtPath({}, settingPath, value, true)
                 );
             }
 
-            const updateAfterValidate = (event, propName) => {
+            const updateAfterValidate = (value) => {
                 let result = null;
                 if (inputInfo.validator !== undefined) {
                     // Must produce a Value
-                    result = inputInfo.validator(event.target[propName]);
+                    result = inputInfo.validator(value);
                 } else {
-                    result = new Value(event.target[propName]);
+                    result = new Value(value);
                 }
 
                 if (result.error != null) {
@@ -110,41 +110,54 @@ export default class ObjectSettingsTab extends React.Component {
 
             let inputElement = null;
             switch (inputInfo.type) {
-            // Most inputs work like this ...
-            case "color":
-            case "date":
-            case "datetime-local":
-            case "email":
-            case "month":
-            case "number":
-            case "range":
-            case "tel":
+            // Most inputs work like this.
+            // Initially, don't validate on change - that would prevent the user
+            // being able to enter some valid inputs. For example, it would be
+            // impossible to enter a full email address (the first character
+            // can't be an '@', but the string must have an '@' in it after the
+            // first character is typed!!).
             case "text":
-            case "time":
             case "url":
-            case "week":
-                // Initially, don't validate on change - that would prevent the
-                // user being able to enter some valid inputs. Eg. it would be
-                // impossible to enter values in e-notation, eg. "1e-12", which
-                // could be used as a faster way of typing a rounding value.
+            case "color":
+            case "email":
+            case "tel":
+            case "date":
+            case "time":
                 inputElement = (<input
                     type={inputInfo.type}
                     value={settingVal}
-                    onChange={(e) => updateDontValidate(e, "value")}
-                    onBlur={(e) => updateAfterValidate(e, "value")}
+                    onChange={(e) => updateDontValidate(e.target.value)}
+                    onBlur={(e) => updateAfterValidate(e.target.value)}
                     {...inputInfo.attrs}>
                 </input>);
                 break;
 
-            // Checkbox is slightly different - use its "checked" attribute
-            // instead of its value. Also, it dosn't need a validator for
-            // something that the HTML itself validates - a checkbox can only be
-            // on or off.
+            // For numeric inputs, use the "valueAsNumber" attribute instead of
+            // just "value" to ensure the value is of the expected type. Again,
+            // don't validate on change. For example, it would otherwise be
+            // impossible to enter values in e-notation (ie. "1e-12").
+            case "number":
+            case "range":
+                inputElement = (<input
+                    type={inputInfo.type}
+                    value={settingVal}
+                    onChange={(e) => updateDontValidate(e.target.value)}
+                    onBlur={(e) => updateAfterValidate(
+                         // convert to float for validation
+                        parseFloat(e.target.value)
+                    )}
+                    {...inputInfo.attrs}>
+                </input>);
+                break;
+
+            // For checkboxes, use the "checked" attribute instead of its value.
+            // Also, it dosn't need a validator for something that the HTML
+            // itself validates - a checkbox can only be on or off.
             case "checkbox":
                 inputElement = (<input
                     type={inputInfo.type}
                     checked={settingVal}
-                    onChange={(e) => updateDontValidate(e, "checked")}
+                    onChange={(e) => updateDontValidate(e.target.checked)}
                     {...inputInfo.attrs}>
                 </input>);
                 break;
@@ -161,17 +174,23 @@ export default class ObjectSettingsTab extends React.Component {
     
                 inputElement = (<select
                     value={settingVal}
-                    onChange={(e) => updateDontValidate(e, "value")}
+                    onChange={(e) => updateDontValidate(e.target.value)}
                     {...inputInfo.attrs}>
                     {optionElements}
                 </select>);
                 break;
 
-            // Notably, "radio" is not included at all - instead, use a text
-            // input with a list defined, setting its validator function to
-            // reject if the given value is not in the list. If sub-sections
-            // need to be opened based on the input's value, then set the
-            // sub-section's _depends.value to the relevant string.
+            // Notably, some inputs are not defined above:
+            // - "datetime-local", "month", "week": These are not supported in
+            //   all browsers (ahem, Firefox), so should not be used yet.
+            // - "password": Is not needed for a data generation app. Its only
+            //   purpose is to hide the input's contents, which isn't very
+            //   useful when trying to configure settings for generating data.
+            // - "file": Same as "password" - not useful.
+            // - "radio": This was difficult to implement in the current
+            //   architecture. However, it is not actually needed - instead, use
+            //   the "select" input, setting its validator function to reject if
+            //   the given value is not in the list.
             }
 
             // Return the input wrapped in a label.
