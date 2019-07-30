@@ -1,3 +1,6 @@
+import io
+import zipfile
+from contextlib import contextmanager
 from components import generators
 
 def generate_field(field_spec, loaded_generators):
@@ -87,3 +90,56 @@ def generate_tables(tables_spec):
         })
 
     return generated_tables
+
+@contextmanager
+def toCSV(table_spec, with_names=True):
+    """
+    Convert the given table_spec into CSV format, returning a file-like object
+    containing the CSV data.
+    """
+
+    table_str = ""
+    if with_names:
+        table_str += ",".join([field["name"] for field in table_spec["fields"]])
+        table_str += "\n"
+
+    table_str += "\n".join([
+        ",".join(str(item) for item in record)
+        for record in table_spec["records"]
+    ])
+
+    buffer = io.StringIO(table_str)
+    yield buffer
+    buffer.close()
+
+# See:
+# - https://stackoverflow.com/questions/28568687/download-multiple-csvs-using-flask/41374226
+# - https://stackoverflow.com/questions/2463770/python-in-memory-zip-library
+@contextmanager
+def toMultiCSV(multi_table_spec, with_names=True):
+    """
+    Convert the given multi_table_spec into zero or more CSV-formated files
+    contained in a zip archive, returning a file-like object representing the
+    zip file.
+    """
+
+    # WARNING: For the time being, use an in-memory zip file. This may lead to
+    # OUT OF MEMORY conditions!!! But it will be a fair bit faster ...
+    csv_zip_buffer = io.BytesIO()
+    csv_zip_file = zipfile.ZipFile(csv_zip_buffer, 'w', zipfile.ZIP_DEFLATED)
+
+    try:
+        for (table_name, table) in multi_table_spec.items():
+            with toCSV(table) as csv:
+                csv_zip_file.writestr(table_name+".csv", csv.getvalue())
+
+    except zipfile.LargeZipFile:
+        # TODO/FIXME: WHAT SHOULD THIS RAISE? (look through Werkzeug's list of
+        # exceptions)
+        raise # For now, just re-raise
+
+    csv_zip_file.close() # Close the zip file to write final metadata
+
+    csv_zip_buffer.seek(0) # Reset the 'current position' ready for reading
+    yield csv_zip_buffer
+    csv_zip_buffer.close()

@@ -106,10 +106,27 @@ def generate_endpoint():
     # Generate the tables according to the generation spec
     generated_tables = generate.generate_tables(generate_spec["tables"])
 
-    # FIXME: For now, just return the raw generated data structure
+    # Generate the CSV data and return the file to the client
     output_format = generate_spec["general"]["output-format"]
     if output_format == "multi-table":
-        return json.dumps(generated_tables)
+        # Equivilent to `with <EXPR> as <VAR>: <BLOCK>...</BLOCK>`, but without
+        # calling __exit__() to close the file.
+        # See https://www.python.org/dev/peps/pep-0343/.
+        mgr = generate.toMultiCSV(generated_tables) # <EXPR>
+        multi_csv = type(mgr).__enter__(mgr) # <VAR>
+        # <BLOCK>
+        return flask.send_file(
+            multi_csv, mimetype="application/zip",
+            as_attachment=True, attachment_filename="generated-tables.zip")
+        # </BLOCK>
+
+        # The file will be 'closed' when it is GCed after it goes out of scope.
+        # This will work on a io.BytesIO instance (as toMultiCSV() returns)
+        # because it is an in-memory file-like object - ie. not a 'real' file.
+        # While leaving the file to be closed by the GC, even in the case of
+        # 'virtual' files, is not good form, closing it explicitly raises a
+        # ValueError.
+
     # TODO: support single-table
 
 # Index Page
