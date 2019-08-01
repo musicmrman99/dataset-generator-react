@@ -7,6 +7,7 @@
       "type": "object",
       "properties": {
         "output-format": {
+          "type": "string",
           "enum": ["multi-table", "single-table"]
         }
       },
@@ -16,7 +17,11 @@
     "table": {
       "type": "object",
       "properties": {
-        "name": { "type": "string" },
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$",
+          "$comment": "Deliberately excludes Unicode characters."
+        },
         "settings": { "$ref": "#/definitions/table-settings" },
         "fields": {
           "type": "array",
@@ -29,7 +34,10 @@
     "table-settings": {
       "type": "object",
       "properties": {
-        "numRecords": { "type": "integer" }
+        "numRecords": {
+          "type": "integer",
+          "minimum": 0
+        }
       },
       "required": ["numRecords"]
     },
@@ -37,7 +45,11 @@
     "field": {
       "type": "object",
       "properties": {
-        "name": { "type": "string" },
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$",
+          "$comment": "Deliberately excludes Unicode characters."
+        },
         "settings": { "$ref": "#/definitions/field-settings" }
       },
       "required": ["name", "settings"]
@@ -55,12 +67,23 @@
               "$ref": "#/definitions/foreignKeyParams"
             }
           },
-          "required": ["primaryKey", "foreignKey"]
+          "required": ["primaryKey", "foreignKey"],
+          "$comment": "'foreignKeyParams' is required if foreignKey is true. See AdditionalValidation."
         },
         "dataType": {
           "type": "object",
           "properties": {
-            "dataType": { "type": "string" },
+            "dataType": {
+              "type": "string",
+              "enum": [
+                "null",
+                "forename",
+                "surname",
+                "phoneNumber",
+                "numberSequence",
+                "randomNumber"
+              ]
+            },
             "numberSequence": {
               "$ref": "#/definitions/numberSequence"
             },
@@ -68,40 +91,53 @@
               "$ref": "#/definitions/randomNumber"
             }
           },
-          "required": ["dataType"]
+          "required": ["dataType"],
+          "$comment": "'numberSequence' and 'randomNumber' are required if 'dataType' is the respective value. See AdditionalValidation."
         }
       },
       "required": ["keySettings", "dataType"]
     },
 
     "foreignKeyParams": {
-      "$comment": "--- Optional ---",
+      "$comment": "--- Conditional Dependency ---",
 
       "type": "object",
       "properties": {
-        "table": { "type": "string" },
-        "field": { "type": "string" }
+        "table": {
+          "type": "string",
+          "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$",
+          "$comment": "Deliberately excludes Unicode characters."
+        },
+        "field": {
+          "type": "string",
+          "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$",
+          "$comment": "Deliberately excludes Unicode characters."
+        }
       },
       "required": ["table", "field"]
     },
 
     "numberSequence": {
-      "$comment": "--- Optional ---",
+      "$comment": "--- Conditional Dependency ---",
 
       "type": "object",
       "properties": {
         "start": { "type": "number" },
         "step": { "type": "number" },
-        "sequenceType": { "type": "string" },
+        "sequenceType": {
+          "type": "string",
+          "enum": ["infinite", "looping"]
+        },
         "loopingSequenceParams": {
           "$ref": "#/definitions/loopingSequenceParams"
         }
       },
-      "required": ["start", "step", "sequenceType"]
+      "required": ["start", "step", "sequenceType"],
+      "$comment": "'loopingSequenceParams' is required if sequenceType is 'looping'. See AdditionalValidators."
     },
 
     "loopingSequenceParams": {
-      "$comment": "--- Optional ---",
+      "$comment": "--- Conditional Dependency ---",
 
       "type": "object",
       "properties": {
@@ -111,13 +147,22 @@
     },
 
     "randomNumber": {
-      "$comment": "--- Optional ---",
+      "$comment": "--- Conditional Dependency ---",
 
       "type": "object",
       "properties": {
-        "start": { "type": "number" },
-        "end": { "type": "number" },
-        "round": { "type": "number" }
+        "start": {
+          "type": "number",
+          "$comment": "Must be <= end. See AdditionalValidators."
+        },
+        "end": {
+          "type": "number",
+          "$comment": "Must be >= start. See AdditionalValidators."
+        },
+        "round": {
+          "type": "number",
+          "minimum": 0
+        }
       },
       "required": ["start", "end", "round"]
     }

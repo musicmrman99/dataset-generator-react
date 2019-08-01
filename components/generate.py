@@ -18,6 +18,8 @@ def generate_field(field_spec, loaded_generators):
     data_type = gen_settings["dataType"]
 
     # Get the generator
+    # If the generator is in the schema's enum, but not defined in the generator
+    # module - that would be an 'internal server error'! So don't catch it.
     generator_constructor = generators.generators[data_type]
 
     # Re-use the created generator, or create a new one

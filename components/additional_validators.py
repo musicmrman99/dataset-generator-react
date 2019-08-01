@@ -23,17 +23,19 @@ class AdditionalValidators:
 
           All remaining arguments are valid_fns - functions that validate the
           context by checking for some logical requirement, such as 'key A must
-          exist at location B **IF** the value of X is Y'. Note the 'IF'.
-          -----
-          NOTE 1: This is as oppose to a static requirement, such as 'the value
-          of X should be of type Y', which can (and should) be validated using
-          jsonschema.
-          NOTE 2: As an exception to the above rule, static requirements should
-          be validated using this function if the static requirement is being
-          validated **after** a logical requirement.
-          NOTE 3: valid_fns are executed in the order they are given.
-          -----
-          valid_fns should raise an exception if they fail validation.
+          exist at location B **IF** the value of X is Y'. This is as oppose to
+          a static requirement, such as 'the value of X should be of type Y',
+          which can (and should) be validated using JSON Schema. There are two
+          exceptions to this rule:
+
+          1. Validating a static requirement after a logical requirement (such
+             as conditional dependencies).
+          2. Validating complex static requirements that cannot reasonably be
+             expressed using JSON Schema.
+
+          Validation functions raise an exception if they fail validation.
+          Validation functions MUST be pure functions - they MUST NOT modify any
+          objects they are passed.
         """
 
         if len(valid_fns) == 0: return
@@ -88,10 +90,14 @@ class AdditionalValidators:
             cls.loopingSequenceParams_exists_if_required,
             cls.loopingSequenceParams_matches_schema_if_exists)
 
-    # #/definitions/field-settings["keySettings"]["foreignKeyParams"]
-    #   {REQUIRED IF}
+    # Conditional Dependencies
+    # --------------------------------------------------
+
+    #   {IF}
     # #/definitions/field-settings["keySettings"]["foreignKey"]
-    #   == True
+    #   {== True}
+    # #/definitions/field-settings["keySettings"]["foreignKeyParams"]
+    #   {IS REQUIRED}
 
     @classmethod
     def foreignKeyParams_exists_if_required(cls, context):
@@ -120,10 +126,11 @@ class AdditionalValidators:
         data_schema = cls.generate_schema.subschema("foreignKeyParams")
         data_schema.validate(data)
 
-    # #/definitions/field-settings["dataType"]["numberSequence"]
-    #   {REQUIRED IF}
+    #   {IF}
     # #/definitions/field-settings["dataType"]["dataType"]
-    #   == "numberSequence"
+    #   {== "numberSequence"}
+    # #/definitions/field-settings["dataType"]["numberSequence"]
+    #   {IS REQUIRED}
 
     @classmethod
     def numberSequence_exists_if_required(cls, context):
@@ -153,10 +160,11 @@ class AdditionalValidators:
             "numberSequence", ["loopingSequenceParams"])
         data_schema.validate(data)
 
-    # #/definitions/field-settings["dataType"]["randomSequence"]
-    #   {REQUIRED IF}
+    #   {IF}
     # #/definitions/field-settings["dataType"]["dataType"]
-    #   == "randomSequence"
+    #   {== "randomSequence"}
+    # #/definitions/field-settings["dataType"]["randomSequence"]
+    #   {IS REQUIRED}
 
     @classmethod
     def randomNumber_exists_if_required(cls, context):
@@ -185,10 +193,11 @@ class AdditionalValidators:
         data_schema = cls.generate_schema.subschema("randomNumber")
         data_schema.validate(data)
 
-    # #/definitions/field-settings["dataType"]["numberSequence"]["loopingSequenceParams"]
-    #   {REQUIRED IF}
+    #   {IF}
     # #/definitions/field-settings["dataType"]["numberSequence"]["sequenceType"]
-    #   == "looping"
+    #   {== "looping"}
+    # #/definitions/field-settings["dataType"]["numberSequence"]["loopingSequenceParams"]
+    #   {IS REQUIRED}
 
     @classmethod
     def loopingSequenceParams_exists_if_required(cls, context):
@@ -219,3 +228,26 @@ class AdditionalValidators:
         data = data_type_spec["numberSequence"]["loopingSequenceParams"]
         data_schema = cls.generate_schema.subschema("loopingSequenceParams")
         data_schema.validate(data)
+
+    # Logical Relations
+    # --------------------------------------------------
+
+    # NOTE: Some of these depend on previous validators
+
+    #   {IF}
+    # #/definitions/fieldSettings["dataType"]["dataType"]
+    #   {== "randomNumber"}
+    # #/definitions/randomNumber["start"]
+    #   {<=}
+    # #/definitions/randomNumber["end"]
+
+    @classmethod
+    def randomNumber_start_le_end(cls, context):
+        field = context["field"]
+
+        # Otherwise, this validation step is not applicable
+        if (field["settings"]["dataType"]["dataType"] == "randomNumber"):
+            randomNumber_spec = field["settings"]["dataType"]["randomNumber"]
+            if (randomNumber_spec["start"] > randomNumber_spec["end"]):
+                raise exceptions.BadSpecificationError(
+                    "randomNumber.start must be less than randomNumber.end")
