@@ -82,13 +82,9 @@ class AdditionalValidators:
 
         cls._validate(for_each_field,
             cls.foreignKeyParams_exists_if_required,
-            cls.foreignKeyParams_matches_schema_if_exists,
             cls.numberSequence_exists_if_required,
-            cls.numberSequence_matches_schema_if_exists,
             cls.randomNumber_exists_if_required,
-            cls.randomNumber_matches_schema_if_exists,
-            cls.loopingSequenceParams_exists_if_required,
-            cls.loopingSequenceParams_matches_schema_if_exists)
+            cls.loopingSequenceParams_exists_if_required)
 
     # Conditional Dependencies
     # --------------------------------------------------
@@ -117,15 +113,6 @@ class AdditionalValidators:
                 "foreignKeyParams missing from "+context_str+", "+
                 "dispite foreignKey being True")
 
-    @classmethod
-    def foreignKeyParams_matches_schema_if_exists(cls, context):
-        field = context["field"]
-
-        # jsonschema will raise an exception for us if validation fails
-        data = field["settings"]["keySettings"]["foreignKeyParams"]
-        data_schema = cls.generate_schema.subschema("foreignKeyParams")
-        data_schema.validate(data)
-
     #   {IF}
     # #/definitions/field-settings["dataType"]["dataType"]
     #   {== "numberSequence"}
@@ -150,16 +137,6 @@ class AdditionalValidators:
                 "numberSequence missing from "+context_str+", "+
                 "dispite dataType being 'numberSequence'")
 
-    @classmethod
-    def numberSequence_matches_schema_if_exists(cls, context):
-        field = context["field"]
-
-        # jsonschema will raise an exception for us if validation fails
-        data = field["settings"]["dataType"]["numberSequence"]
-        data_schema = cls.generate_schema.subschema(
-            "numberSequence", ["loopingSequenceParams"])
-        data_schema.validate(data)
-
     #   {IF}
     # #/definitions/field-settings["dataType"]["dataType"]
     #   {== "randomSequence"}
@@ -183,15 +160,6 @@ class AdditionalValidators:
             raise exceptions.BadSpecificationError(
                 "randomNumber missing from "+context_str+", "+
                 "dispite dataType being 'randomNumber'")
-
-    @classmethod
-    def randomNumber_matches_schema_if_exists(cls, context):
-        field = context["field"]
-
-        # jsonschema will raise an exception for us if validation fails
-        data = field["settings"]["dataType"]["randomNumber"]
-        data_schema = cls.generate_schema.subschema("randomNumber")
-        data_schema.validate(data)
 
     #   {IF}
     # #/definitions/field-settings["dataType"]["numberSequence"]["sequenceType"]
@@ -218,16 +186,6 @@ class AdditionalValidators:
             raise exceptions.BadSpecificationError(
                 "loopingSequenceParams missing from "+context_str+", "+
                 "dispite sequenceType being 'looping'")
-
-    @classmethod
-    def loopingSequenceParams_matches_schema_if_exists(cls, context):
-        field = context["field"]
-
-        # jsonschema will raise an exception for us if validation fails
-        data_type_spec = field["settings"]["dataType"]
-        data = data_type_spec["numberSequence"]["loopingSequenceParams"]
-        data_schema = cls.generate_schema.subschema("loopingSequenceParams")
-        data_schema.validate(data)
 
     # Logical Relations
     # --------------------------------------------------
