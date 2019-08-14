@@ -8,8 +8,8 @@ import jsonschema
 from components import schemas
 
 # Specific
-from components import exceptions, consts, generate
-from components.additional_validators import AdditionalValidators
+from components import exceptions, consts, validate, generate
+from components.validators import validate_generate
 
 # Flask
 import flask
@@ -83,7 +83,8 @@ def generate_endpoint():
     # generate and how to generate them)
     try:
         generate_schema.validate(generate_spec)
-        AdditionalValidators.validate_all(generate_spec, generate_schema)
+        validate.validate(validate_generate.all,
+            generate_spec, generate_schema)
 
     except (
         jsonschema.exceptions.ValidationError,
