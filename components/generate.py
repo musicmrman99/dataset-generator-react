@@ -67,7 +67,7 @@ def generate_tables(tables_spec):
     #   <more tables ...>
     # }
 
-    generated_tables = {}
+    table_gen = {}
     for table_spec in tables_spec:
         fields = []
         for field_spec in table_spec["fields"]:
@@ -82,7 +82,7 @@ def generate_tables(tables_spec):
             })
 
         loaded_generators = {} # Added to as-needed by generate_field()
-        generated_tables.update({
+        table_gen.update({
             table_spec["name"]: {
                 "fields": fields,
                 "records": [[generate_field(field, loaded_generators)
@@ -91,23 +91,23 @@ def generate_tables(tables_spec):
             }
         })
 
-    return generated_tables
+    return table_gen
 
 @contextmanager
-def toCSV(table_spec, with_names=True):
+def toCSV(table_gen, with_names=True):
     """
-    Convert the given table_spec into CSV format, returning a file-like object
+    Convert the given table_gen into CSV format, returning a file-like object
     containing the CSV data.
     """
 
     table_str = ""
     if with_names:
-        table_str += ",".join([field["name"] for field in table_spec["fields"]])
+        table_str += ",".join([field["name"] for field in table_gen["fields"]])
         table_str += "\n"
 
     table_str += "\n".join([
         ",".join(str(item) for item in record)
-        for record in table_spec["records"]
+        for record in table_gen["records"]
     ])
 
     buffer = io.StringIO(table_str)
@@ -118,9 +118,9 @@ def toCSV(table_spec, with_names=True):
 # - https://stackoverflow.com/questions/28568687/download-multiple-csvs-using-flask/41374226
 # - https://stackoverflow.com/questions/2463770/python-in-memory-zip-library
 @contextmanager
-def toMultiCSV(multi_table_spec, with_names=True):
+def toMultiCSV(multi_table_gen, with_names=True):
     """
-    Convert the given multi_table_spec into zero or more CSV-formated files
+    Convert the given multi_table_gen into zero or more CSV-formated files
     contained in a zip archive, returning a file-like object representing the
     zip file.
     """
@@ -131,7 +131,7 @@ def toMultiCSV(multi_table_spec, with_names=True):
     csv_zip_file = zipfile.ZipFile(csv_zip_buffer, 'w', zipfile.ZIP_DEFLATED)
 
     try:
-        for (table_name, table) in multi_table_spec.items():
+        for (table_name, table) in multi_table_gen.items():
             with toCSV(table) as csv:
                 csv_zip_file.writestr(table_name+".csv", csv.getvalue())
 
