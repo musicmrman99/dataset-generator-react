@@ -163,6 +163,74 @@ def loopingSequenceParams_exists_if_required(context):
 # NOTE: Some of these depend on previous validators
 
 #   {IF}
+# #/definitions/field-settings["keySettings"]["foreignKey"]
+#   {== True}
+# #/definitions/field-settings["keySettings"]["foreignKeyParams"]["table"]
+#   {EXISTS IN}
+# #/definitions/table
+#   {AND}
+# #/definitions/field-settings["keySettings"]["foreignKeyParams"]["field"]
+#   {EXISTS IN}
+# #/definitions/field
+
+def find(iterable, predicate):
+    return next((item for item in iterable if predicate(item)), None)
+
+@validate.validator_for(each_field)
+def foreignKeyParams_references_exist(context):
+    spec = context["generate-spec"]
+    cur_table = context["table"]
+    cur_field = context["field"]
+
+    if cur_field["settings"]["keySettings"]["foreignKey"] is True:
+        # Foreign Key Params
+        fkp = cur_field["settings"]["keySettings"]["foreignKeyParams"]
+
+        tables = spec["tables"]
+        if (find(tables, lambda table: table["name"] == fkp["table"]) is None):
+            context_str = formatDict(
+                {"table": cur_table["name"], "field": cur_field["name"]},
+                ["table", "field"])
+            raise exceptions.BadSpecificationError(
+                "table '"+fkp["table"]+"' referenced by foreign key in "+
+                context_str+" does not exist")
+
+        fields = tables[fkp["table"]]["fields"]
+        if (find(fields, lambda field: field["name"] == fkp["field"]) is None):
+            context_str = formatDict(
+                {"table": cur_table["name"], "field": cur_field["name"]},
+                ["table", "field"])
+            raise exceptions.BadSpecificationError(
+                "field '"+fkp["field"]+"' referenced by foreign key in "+
+                context_str+" does not exist")
+
+# #/definitions/table
+#   {COUNT WHERE}
+# (
+#   #/definitions/field-settings["keySettings"]["primaryKey"]
+#     {== True}
+# )
+#   {== 1}
+
+@validate.validator_for(each_table)
+def one_primaryKey_per_table(context):
+    table = context["table"]
+
+    num_pkeys = 0
+    for field in table["fields"]:
+        if field["settings"]["keySettings"]["primaryKey"] is True:
+            num_pkeys += 1
+            if num_pkeys > 2:
+                break # Can short-circuit here
+
+    if num_pkeys == 0:
+        raise exceptions.BadSpecificationError(
+            "no primaryKey defined for table '"+table["name"]+"'")
+    elif num_pkeys > 1:
+        raise exceptions.BadSpecificationError(
+            "multiple primaryKeys defined for table '"+table["name"]+"'")
+
+#   {IF}
 # #/definitions/field-settings["dataType"]["dataType"]
 #   {== "randomNumber"}
 # #/definitions/randomNumber["start"]
