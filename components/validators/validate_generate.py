@@ -11,6 +11,13 @@ def fkv(key, val):
 def formatDict(dict_, order):
     return "{"+", ".join([fkv(key, dict_[key]) for key in order])+"}"
 
+# See https://stackoverflow.com/a/5352649
+def context_str(context):
+    possible_context = ["table", "field"]
+    return formatDict(
+        {key: context[key] for key in possible_context if key in context},
+        possible_context)
+
 # Context Functions
 # --------------------------------------------------
 
@@ -63,98 +70,74 @@ def each_field(global_context):
 # #/definitions/field-settings["keySettings"]["foreignKey"]
 #   {== True}
 # #/definitions/field-settings["keySettings"]["foreignKeyParams"]
-#   {IS REQUIRED}
+#   {EXISTS}
 
 @validate.validator_for(each_field)
 def foreignKeyParams_exists_if_required(context):
-    table = context["table"]
     field = context["field"]
 
-    # Test for absence
     if (
-        field["settings"]["keySettings"]["foreignKey"] == True and
+        field["settings"]["keySettings"]["foreignKey"] is True and
         "foreignKeyParams" not in field["settings"]["keySettings"]
     ):
-        # Validation Failed
-        context_str = formatDict(
-            {"table": table["name"], "field": field["name"]},
-            ["table", "field"])
         raise exceptions.BadSpecificationError(
-            "foreignKeyParams missing from "+context_str+", "+
+            "foreignKeyParams missing from "+context_str(context)+", "+
             "dispite foreignKey being True")
 
 #   {IF}
 # #/definitions/field-settings["dataType"]["dataType"]
 #   {== "numberSequence"}
 # #/definitions/field-settings["dataType"]["numberSequence"]
-#   {IS REQUIRED}
+#   {EXISTS}
 
 @validate.validator_for(each_field)
 def numberSequence_exists_if_required(context):
-    table = context["table"]
     field = context["field"]
 
-    # Test for absence
     if (
         field["settings"]["dataType"]["dataType"] == "numberSequence" and
         "numberSequence" not in field["settings"]["dataType"]
     ):
-        # Validation Failed
-        context_str = formatDict(
-            {"table": table["name"], "field": field["name"]},
-            ["table", "field"])
         raise exceptions.BadSpecificationError(
-            "numberSequence missing from "+context_str+", "+
+            "numberSequence missing from "+context_str(context)+", "+
             "dispite dataType being 'numberSequence'")
 
 #   {IF}
 # #/definitions/field-settings["dataType"]["dataType"]
 #   {== "randomSequence"}
 # #/definitions/field-settings["dataType"]["randomSequence"]
-#   {IS REQUIRED}
+#   {EXISTS}
 
 @validate.validator_for(each_field)
 def randomNumber_exists_if_required(context):
-    table = context["table"]
     field = context["field"]
 
-    # Test for absence
     if (
         field["settings"]["dataType"]["dataType"] == "randomNumber" and
         "randomNumber" not in field["settings"]["dataType"]
     ):
-        # Validation Failed
-        context_str = formatDict(
-            {"table": table["name"], "field": field["name"]},
-            ["table", "field"])
         raise exceptions.BadSpecificationError(
-            "randomNumber missing from "+context_str+", "+
+            "randomNumber missing from "+context_str(context)+", "+
             "dispite dataType being 'randomNumber'")
 
 #   {IF}
 # #/definitions/field-settings["dataType"]["numberSequence"]["sequenceType"]
 #   {== "looping"}
 # #/definitions/field-settings["dataType"]["numberSequence"]["loopingSequenceParams"]
-#   {IS REQUIRED}
+#   {EXISTS}
 
 @validate.validator_for(each_field)
 def loopingSequenceParams_exists_if_required(context):
-    table = context["table"]
     field = context["field"]
 
-    # Test for absence
     data_type_spec = field["settings"]["dataType"]
     if (
         data_type_spec["dataType"] == "numberSequence" and
         data_type_spec["numberSequence"]["sequenceType"] == "looping" and
         "loopingSequenceParams" not in data_type_spec["numberSequence"]
     ):
-        # Validation Failed
-        context_str = formatDict(
-            {"table": table["name"], "field": field["name"]},
-            ["table", "field"])
         raise exceptions.BadSpecificationError(
-            "loopingSequenceParams missing from "+context_str+", "+
+            "loopingSequenceParams missing from "+context_str(context)+", "+
             "dispite sequenceType being 'looping'")
 
 # Logical Relations
@@ -179,7 +162,6 @@ def find(iterable, predicate):
 @validate.validator_for(each_field)
 def foreignKeyParams_references_exist(context):
     spec = context["generate-spec"]
-    cur_table = context["table"]
     cur_field = context["field"]
 
     if cur_field["settings"]["keySettings"]["foreignKey"] is True:
@@ -188,21 +170,15 @@ def foreignKeyParams_references_exist(context):
 
         tables = spec["tables"]
         if (find(tables, lambda table: table["name"] == fkp["table"]) is None):
-            context_str = formatDict(
-                {"table": cur_table["name"], "field": cur_field["name"]},
-                ["table", "field"])
             raise exceptions.BadSpecificationError(
                 "table '"+fkp["table"]+"' referenced by foreign key in "+
-                context_str+" does not exist")
+                context_str(context)+" does not exist")
 
         fields = tables[fkp["table"]]["fields"]
         if (find(fields, lambda field: field["name"] == fkp["field"]) is None):
-            context_str = formatDict(
-                {"table": cur_table["name"], "field": cur_field["name"]},
-                ["table", "field"])
             raise exceptions.BadSpecificationError(
                 "field '"+fkp["field"]+"' referenced by foreign key in "+
-                context_str+" does not exist")
+                context_str(context)+" does not exist")
 
 # #/definitions/table
 #   {COUNT WHERE}
@@ -221,14 +197,15 @@ def one_primaryKey_per_table(context):
         if field["settings"]["keySettings"]["primaryKey"] is True:
             num_pkeys += 1
             if num_pkeys > 2:
-                break # Can short-circuit here
+                break # Short-circuit - validation has already failed
 
     if num_pkeys == 0:
         raise exceptions.BadSpecificationError(
-            "no primaryKey defined for table '"+table["name"]+"'")
+            "no primaryKey defined in "+context_str(context)+" (one required)")
     elif num_pkeys > 1:
         raise exceptions.BadSpecificationError(
-            "multiple primaryKeys defined for table '"+table["name"]+"'")
+            "multiple primaryKeys defined in "+context_str(context)+" "+
+            "(one required)")
 
 #   {IF}
 # #/definitions/field-settings["dataType"]["dataType"]
@@ -246,7 +223,8 @@ def randomNumber_start_le_end(context):
         randomNumber_spec = field["settings"]["dataType"]["randomNumber"]
         if (randomNumber_spec["start"] > randomNumber_spec["end"]):
             raise exceptions.BadSpecificationError(
-                "randomNumber.start must be less than randomNumber.end")
+                "start must be less than end in randomNumber parameters in "+
+                context_str(context))
 
 # Collection of All Validators
 # --------------------
