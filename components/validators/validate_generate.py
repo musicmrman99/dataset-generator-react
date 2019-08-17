@@ -9,7 +9,7 @@ def fkv(key, val):
     return key+": \""+val+"\""
 
 def formatDict(dict_, order):
-    return "{"+[fkv(key, dict_[key]) for key in order].join(", ")+"}"
+    return "{"+", ".join([fkv(key, dict_[key]) for key in order])+"}"
 
 # Context Functions
 # --------------------------------------------------
