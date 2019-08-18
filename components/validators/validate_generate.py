@@ -192,7 +192,7 @@ def foreignKeyParams_references_exist(context):
         fields = table["fields"]
         if (find(fields, lambda field: field["name"] == fkp["field"]) is None):
             raise exceptions.BadSpecificationError(
-                "field '"+fkp["field"]+"' referenced by foreign key in "+
+                "field '"+fkp["field"]+"' referenced by foreign key "+
                 context_str(context)+" does not exist")
 
 # #/definitions/table
