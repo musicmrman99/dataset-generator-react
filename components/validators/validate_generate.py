@@ -1,22 +1,36 @@
+from collections import OrderedDict
 import sys
 import jsonschema
 from components import validate, exceptions
 
-# Helper Functions
+# Helper Functions/Classes
 # --------------------------------------------------
 
-def fkv(key, val):
-    return key+": \""+val+"\""
+class StrConcatOrderedDict(OrderedDict):
+    """Implements the '+' operator for str objects."""
 
-def formatDict(dict_, order):
-    return "{"+", ".join([fkv(key, dict_[key]) for key in order])+"}"
+    def __add__(self, other):
+        print(self, other)
+        return str(self) + other
 
-# See https://stackoverflow.com/a/5352649
+    def __radd__(self, other):
+        return other + str(self)
+
+class ContextStr(StrConcatOrderedDict):
+    def __str__(self):
+        return "{"+", ".join([
+            key+": \""+value+"\""
+            for (key, value) in self.items()
+        ])+"}"
+
 def context_str(context):
-    possible_context = ["table", "field"]
-    return formatDict(
-        {key: context[key] for key in possible_context if key in context},
-        possible_context)
+    ctx_str = ContextStr()
+    if "table" in context:
+        ctx_str["table"] = context["table"]["name"]
+    if "field" in context:
+        ctx_str["field"] = context["field"]["name"]
+
+    return ctx_str
 
 # Context Functions
 # --------------------------------------------------
