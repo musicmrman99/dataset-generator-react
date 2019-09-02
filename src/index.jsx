@@ -5,8 +5,10 @@ import { DragDropContext } from 'react-dnd';
 import HTML5Backend from 'react-dnd-html5-backend';
 import { FlexibleDragDropContext } from  './generics/flexible-dnd';
 
+import Header from './header';
 import Panel from './panel';
 import Workspace from './workspace';
+import Footer from './footer';
 
 import { ObjectTypes, ObjectSettingsDefs } from './types';
 import { Trees, Selectors, TraversalConflictPriority, isSpecialNode } from './helpers/trees';
@@ -434,6 +436,12 @@ const objectPropertiesOperations = Object.freeze({
     }
 });
 
+const globalOperations = Object.freeze({
+    getVersion() {
+        return this.state.version;
+    }
+});
+
 const pageManagement = Object.freeze({
     // Based on https://stackoverflow.com/a/7317311
     unloadHandler(shouldUnload, event) {
@@ -458,9 +466,11 @@ export default class App extends React.Component {
         super(props);
 
         this.state = {
+            version: 0.2,
+            isUnsaved: false,
+
             tables: [],
-            currentObject: {type: null, path: null},
-            isUnsaved: false
+            currentObject: {type: null, path: null}
         }
 
         this.actions = {
@@ -480,6 +490,10 @@ export default class App extends React.Component {
             updateObjectSettings: objectPropertiesOperations.updateObjectSettings.bind(this)
         }
 
+        this.globalActions = {
+            getVersion: globalOperations.getVersion.bind(this)
+        }
+
         // NOTE: This can still be overriden by the user to discard changes.
         this.shouldPageUnload = pageManagement.shouldPageUnload.bind(this);
         window.addEventListener("beforeunload",
@@ -488,20 +502,24 @@ export default class App extends React.Component {
     }
 
     render () {
-        return (
-            <div className="content span-container">
-                <Panel tables={this.state.tables} actions={this.actions} />
-                <Workspace
-                    tables={this.state.tables}
-                    currentObject={this.state.currentObject}
-                    actions={this.actions} />
-            </div>
-        );
+        return (<div>
+            <Header globalActions={this.globalActions}></Header>
+            <main>
+                <div className="content span-container">
+                    <Panel tables={this.state.tables} actions={this.actions} />
+                    <Workspace
+                        tables={this.state.tables}
+                        currentObject={this.state.currentObject}
+                        actions={this.actions} />
+                </div>
+            </main>
+            <Footer></Footer>
+        </div>);
     }
 }
 
 // Load the app into the 'real' DOM
 window.onload = function () {
-    const main = document.getElementsByTagName("main")[0];
+    const main = document.getElementById("react-root");
     ReactDOM.render(<App />, main);
 };

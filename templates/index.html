@@ -1,16 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Home{% endblock %}
 {% block external %}
-<link rel="stylesheet" href="static/css/app.css">
-<!--<script src="static/js/_external_/interact.min.js"></script>-->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
 <script src="static/js/app.js"></script>
 {% endblock %}
 
-{% block navbar %}
-<button type="button" id="generate">Generate</button>
-{% endblock %}
-
 {% block content %}
-<!-- This is for any *completely* static data - or data that is best served
-from the backend. -->
+<div id="react-root"></div>
 {% endblock %}
