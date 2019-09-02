@@ -1,4 +1,4 @@
-import fetchHelpers from './fetch';
+import { fetchJSON } from './fetch-helpers';
 import TreeCache from './tree-cache';
 
 // This MUST be set to the correct domain
@@ -30,9 +30,9 @@ export default class ResourceManager {
         return this.cache.cache("/types",
             function () {
                 // Return a Promise
-                return fetch([RESOURCE_API_PATH, "types"].join("/"))
-                    .then(fetchHelpers.raiseFetchErrors) // handle errors
-                    .then((response) => response.json()); // to JSON
+                return fetchJSON(
+                    "GET", [RESOURCE_API_PATH, "types"].join("/")
+                )
             }
         );
     }
@@ -64,9 +64,9 @@ export default class ResourceManager {
                 ).join("&");
                 
                 // Return a Promise
-                return fetch(resourcesPath + "?" + resourceArgs)
-                    .then(fetchHelpers.raiseFetchErrors) // handle errors
-                    .then((response) => response.json()); // to JSON
+                return fetchJSON(
+                    "GET", resourcesPath + "?" + resourceArgs
+                )
             }
         );
     }
