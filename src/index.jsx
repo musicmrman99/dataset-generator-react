@@ -19,7 +19,7 @@ import ResourceManager from './helpers/resource-manager';
 window.resourceManager = new ResourceManager();
 
 import getUniqueName from './helpers/get-unique-name';
-import assert from './actions/helpers/assert';
+import assert from './data-operations/helpers/assert';
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // WARNING: DO NOT USE METHODS DESIGNED TO BE BOUND TO 'App' STAND-ALONE
