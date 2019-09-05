@@ -9,22 +9,6 @@
 	{% block external %}{% endblock %}
 </head>
 <body>
-    <header class="span-container padded">
-        <div class="span span-4">
-            <p id="title">Dataset Generator {{ version }}</p>
-        </div>
-        <div class="span span-8">
-            {% block navbar %}{% endblock %}
-        </div>
-    </header>
-
-    <main>
-        {% block content %}{% endblock %}
-    </main>
-
-    <div id="footer-overlap"></div>
-    <footer class="padded">
-        <p></p>
-    </footer>
+	{% block content %}{% endblock %}
 </body>
 </html>

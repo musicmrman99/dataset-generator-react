@@ -5,12 +5,16 @@ import { DragDropContext } from 'react-dnd';
 import HTML5Backend from 'react-dnd-html5-backend';
 import { FlexibleDragDropContext } from  './generics/flexible-dnd';
 
+import Header from './header';
 import Panel from './panel';
 import Workspace from './workspace';
+import Footer from './footer';
 
 import { ObjectTypes, ObjectSettingsDefs } from './types';
 import { Trees, Selectors, TraversalConflictPriority, isSpecialNode } from './helpers/trees';
-import pathHelpers, { Slashes } from './helpers/path';
+import { fetchFile } from './helpers/fetch-helpers'
+import { mapPaths, del, clone } from './helpers/map-path' // Object manipulation
+import pathHelpers, { Slashes } from './helpers/path'; // String manipulation
 import ResourceManager from './helpers/resource-manager';
 window.resourceManager = new ResourceManager();
 
@@ -434,6 +438,77 @@ const objectPropertiesOperations = Object.freeze({
     }
 });
 
+function build_generate_request(output_format, tables) {
+    // For immutability (ie. so as not to modify the 'full' representation of
+    // the UI's data), the data structure will have to be cloned all the way
+    // down to any modifications.
+    const sendTables = clone(tables).map((table) => {
+        const newTable = clone(table);
+        newTable["fields"] = clone(newTable["fields"]).map((field) => {
+            const newField = clone(field);
+
+            const actionList = [];
+            if (newField["settings"]["keySettings"]["foreignKey"] === false) {
+                actionList.push([
+                    ["settings", clone],
+                    ["keySettings", clone],
+                    ["foreignKeyParams", del]
+                ]);
+            }
+            if (newField["settings"]["dataType"]["dataType"] !== "numberSequence") {
+                actionList.push([
+                    ["settings", clone],
+                    ["dataType", clone],
+                    ["numberSequence", del]
+                ]);
+            } else {
+                if (newField["settings"]["dataType"]["numberSequence"]["sequenceType"] !== "looping") {
+                    actionList.push([
+                        ["settings", clone],
+                        ["dataType", clone],
+                        ["numberSequence", clone],
+                        ["loopingSequenceParams", del]
+                    ]);
+                }
+            }
+            if (newField["settings"]["dataType"]["dataType"] !== "randomNumber") {
+                actionList.push([
+                    ["settings", clone],
+                    ["dataType", clone],
+                    ["randomNumber", del]
+                ]);
+            }
+
+            mapPaths(newField, actionList);
+            return newField;
+        });
+        return newTable;
+    });
+
+    return {
+        "general": {"output-format": output_format},
+        "tables": sendTables
+    };
+}
+
+const globalOperations = Object.freeze({
+    getVersion() {
+        return this.state.version;
+    },
+
+    generate() {
+        fetchFile("POST", "/data-api/1.0.0/generate",
+            { "Content-Type": "application/json" },
+            // TODO: allow "single-table" output format (global object)
+            JSON.stringify(
+                build_generate_request("multi-table", this.state.tables)
+            ),
+            // TODO: allow the user to enter the filename (global object)
+            "tables.zip"
+        );
+    }
+});
+
 const pageManagement = Object.freeze({
     // Based on https://stackoverflow.com/a/7317311
     unloadHandler(shouldUnload, event) {
@@ -458,9 +533,11 @@ export default class App extends React.Component {
         super(props);
 
         this.state = {
+            version: 0.2,
+            isUnsaved: false,
+
             tables: [],
-            currentObject: {type: null, path: null},
-            isUnsaved: false
+            currentObject: {type: null, path: null}
         }
 
         this.actions = {
@@ -480,6 +557,11 @@ export default class App extends React.Component {
             updateObjectSettings: objectPropertiesOperations.updateObjectSettings.bind(this)
         }
 
+        this.globalActions = {
+            getVersion: globalOperations.getVersion.bind(this),
+            generate: globalOperations.generate.bind(this)
+        }
+
         // NOTE: This can still be overriden by the user to discard changes.
         this.shouldPageUnload = pageManagement.shouldPageUnload.bind(this);
         window.addEventListener("beforeunload",
@@ -488,20 +570,24 @@ export default class App extends React.Component {
     }
 
     render () {
-        return (
-            <div className="content span-container">
-                <Panel tables={this.state.tables} actions={this.actions} />
-                <Workspace
-                    tables={this.state.tables}
-                    currentObject={this.state.currentObject}
-                    actions={this.actions} />
-            </div>
-        );
+        return (<div>
+            <Header globalActions={this.globalActions}></Header>
+            <main>
+                <div className="content span-container">
+                    <Panel tables={this.state.tables} actions={this.actions} />
+                    <Workspace
+                        tables={this.state.tables}
+                        currentObject={this.state.currentObject}
+                        actions={this.actions} />
+                </div>
+            </main>
+            <Footer></Footer>
+        </div>);
     }
 }
 
 // Load the app into the 'real' DOM
 window.onload = function () {
-    const main = document.getElementsByTagName("main")[0];
+    const main = document.getElementById("react-root");
     ReactDOM.render(<App />, main);
 };

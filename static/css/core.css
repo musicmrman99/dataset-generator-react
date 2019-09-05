@@ -105,7 +105,7 @@ header p {
 
 /* Footer */
 
-#footer-overlap { height: 30px; }
+#footer-overlap { height: 40px; }
 footer {
 	position: absolute;
 	bottom: 0;
