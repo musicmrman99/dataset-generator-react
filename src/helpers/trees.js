@@ -95,8 +95,9 @@ export const Trees = Object.freeze({
 
     // An generator/iterator for one or more trees simultaneously.
     //
-    // Yields {key, values[], isLeaf, path[]} for every 'node'. Yielding every
-    // node allows the entire tree to be re-constructed using the generator.
+    // Yields {key, values[], isLeaf, parentPath[]} for every 'node'. Yielding
+    // every node allows the entire tree to be re-constructed using the
+    // generator.
     //
     // NOTE: It iterates depth-first.
     // NOTE: The 'parentPath' parameter is rarely passed in directly. It is
