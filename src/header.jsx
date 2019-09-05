@@ -10,7 +10,10 @@ export default class Header extends React.Component {
                     </p>
                 </div>
                 <div className="span span-8">
-                    <button type="button" id="generate">Generate</button>
+                    <button type="button"
+                        onClick={(e) => {this.props.globalActions.generate()}}>
+                        Generate
+                    </button>
                 </div>
             </header>
         );
