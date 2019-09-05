@@ -22,11 +22,19 @@ import getUniqueName from './helpers/get-unique-name';
 import assert from './actions/helpers/assert';
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// WARNING: DO NOT USE NON-PRIVATE METHODS STAND-ALONE
-// - non-private methods must be bound to App's 'this'
-// - private methods must be called in the style:
-//     objectOperations._privateMethod()
+// WARNING: DO NOT USE METHODS DESIGNED TO BE BOUND TO 'App' STAND-ALONE
+// For the rest of this module (up to the definition of 'App' itself), the
+// following must be followed:
+// - Non-private methods (those that do not start with an underscore) MUST be
+//   bound to 'App'.
+// - Private methods may be applied to 'App' or not, depending on the method's
+//   purpose. As such, they may be called using either:
+//     <whatever>Operations._privateMethod([...args])
+//   Or (where 'this' is 'App', as the method calling the private method MUST be
+//   applied to 'App'):
+//     <whatever>Operations._privateMethod.apply(this, [...args])
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 const objectOperations = Object.freeze({
     _createObject(type, spec) {
         return Object.assign(
@@ -152,13 +160,7 @@ const objectOperations = Object.freeze({
     }
 });
 
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// WARNING: DO NOT USE NON-PRIVATE METHODS STAND-ALONE
-// - non-private methods must be bound to App's 'this'
-// - private methods must be called in the style:
-//     objectReferenceManagement._privateMethod()
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-const objectReferenceManagement = Object.freeze({
+const objectReferenceOperations = Object.freeze({
     _objRef(objType, objPath) {
         return Object.freeze({
             type: objType,
@@ -186,8 +188,8 @@ const objectReferenceManagement = Object.freeze({
     },
 
     getObject(objType, objPath) {
-        const objRef = objectReferenceManagement._objRef.apply(this, [objType, objPath]);
-        objectReferenceManagement._checkValid.apply(this, [objRef]);
+        const objRef = objectReferenceOperations._objRef.apply(this, [objType, objPath]);
+        objectReferenceOperations._checkValid.apply(this, [objRef]);
         return objRef;
     },
 
@@ -206,13 +208,7 @@ const objectReferenceManagement = Object.freeze({
     }
 });
 
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// WARNING: DO NOT USE NON-PRIVATE METHODS STAND-ALONE
-// - non-private methods must be bound to App's 'this'
-// - private methods must be called in the style:
-//     currentObjectManagement._privateMethod()
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-const currentObjectManagement = Object.freeze({
+const currentObjectOperations = Object.freeze({
     // If someone uses this to edit the current object, then they'll get what
     // they deserve - a lot of problems. It's called ***GET*** for a reason! :)
     // (See 'setCurrentObject()' for a safe way)
@@ -221,7 +217,7 @@ const currentObjectManagement = Object.freeze({
     },
 
     resolveCurrentObject() {
-        return objectReferenceManagement.resolveObject.apply(
+        return objectReferenceOperations.resolveObject.apply(
             this, [this.state.currentObject]
         );
     },
@@ -229,19 +225,13 @@ const currentObjectManagement = Object.freeze({
     // You can also set the current object (which you can't )
     setCurrentObject(objectType, objectPath) {
         this.setState({
-            currentObject: objectReferenceManagement.getObject.apply(
+            currentObject: objectReferenceOperations.getObject.apply(
                 this, [objectType, objectPath]
             )
         });
     }
 });
 
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// WARNING: DO NOT USE NON-PRIVATE METHODS STAND-ALONE
-// - non-private methods must be bound to App's 'this'
-// - private methods must be called in the style:
-//     objectPropertiesOperations._privateMethod()
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 const objectPropertiesOperations = Object.freeze({
     _mergeObjectSettings(type, oldSettings, newSettings) {
         return Trees.translate(
@@ -363,77 +353,80 @@ const objectPropertiesOperations = Object.freeze({
     }
 });
 
-function build_generate_request(output_format, tables) {
-    // For immutability (ie. so as not to modify the 'full' representation of
-    // the UI's data), the data structure will have to be cloned all the way
-    // down to any modifications.
-    const sendTables = clone(tables).map((table) => {
-        const newTable = clone(table);
-        newTable["fields"] = clone(newTable["fields"]).map((field) => {
-            const newField = clone(field);
-
-            const actionList = [];
-            if (newField["settings"]["keySettings"]["foreignKey"] === false) {
-                actionList.push([
-                    ["settings", clone],
-                    ["keySettings", clone],
-                    ["foreignKeyParams", del]
-                ]);
-            }
-            if (newField["settings"]["dataType"]["dataType"] !== "numberSequence") {
-                actionList.push([
-                    ["settings", clone],
-                    ["dataType", clone],
-                    ["numberSequence", del]
-                ]);
-            } else {
-                if (newField["settings"]["dataType"]["numberSequence"]["sequenceType"] !== "looping") {
-                    actionList.push([
-                        ["settings", clone],
-                        ["dataType", clone],
-                        ["numberSequence", clone],
-                        ["loopingSequenceParams", del]
-                    ]);
-                }
-            }
-            if (newField["settings"]["dataType"]["dataType"] !== "randomNumber") {
-                actionList.push([
-                    ["settings", clone],
-                    ["dataType", clone],
-                    ["randomNumber", del]
-                ]);
-            }
-
-            mapPaths(newField, actionList);
-            return newField;
-        });
-        return newTable;
-    });
-
-    return {
-        "general": {"output-format": output_format},
-        "tables": sendTables
-    };
-}
-
 const globalOperations = Object.freeze({
     getVersion() {
         return this.state.version;
+    },
+
+    _build_generate_request(output_format, tables) {
+        // For immutability (ie. so as not to modify the 'full' representation of
+        // the UI's data), the data structure will have to be cloned all the way
+        // down to any modifications.
+        const sendTables = clone(tables).map((table) => {
+            const newTable = clone(table);
+            newTable["fields"] = clone(newTable["fields"]).map((field) => {
+                const newField = clone(field);
+    
+                const actionList = [];
+                if (newField["settings"]["keySettings"]["foreignKey"] === false) {
+                    actionList.push([
+                        ["settings", clone],
+                        ["keySettings", clone],
+                        ["foreignKeyParams", del]
+                    ]);
+                }
+                if (newField["settings"]["dataType"]["dataType"] !== "numberSequence") {
+                    actionList.push([
+                        ["settings", clone],
+                        ["dataType", clone],
+                        ["numberSequence", del]
+                    ]);
+                } else {
+                    if (newField["settings"]["dataType"]["numberSequence"]["sequenceType"] !== "looping") {
+                        actionList.push([
+                            ["settings", clone],
+                            ["dataType", clone],
+                            ["numberSequence", clone],
+                            ["loopingSequenceParams", del]
+                        ]);
+                    }
+                }
+                if (newField["settings"]["dataType"]["dataType"] !== "randomNumber") {
+                    actionList.push([
+                        ["settings", clone],
+                        ["dataType", clone],
+                        ["randomNumber", del]
+                    ]);
+                }
+    
+                mapPaths(newField, actionList);
+                return newField;
+            });
+            return newTable;
+        });
+    
+        return {
+            "general": {"output-format": output_format},
+            "tables": sendTables
+        };
     },
 
     generate() {
         fetchFile("POST", "/data-api/1.0.0/generate",
             { "Content-Type": "application/json" },
             // TODO: allow "single-table" output format (global object)
-            JSON.stringify(
-                build_generate_request("multi-table", this.state.tables)
-            ),
+            JSON.stringify(globalOperations._build_generate_request(
+                "multi-table", this.state.tables
+            )),
             // TODO: allow the user to enter the filename (global object)
             "tables.zip"
         );
     }
 });
 
+// This is the the part of the page management system that only the top-level
+// App will interface with. See globalOperations for the parts of the page
+// management system accessible to sub-components.
 const pageManagement = Object.freeze({
     // Based on https://stackoverflow.com/a/7317311
     unloadHandler(shouldUnload, event) {
@@ -472,11 +465,11 @@ export default class App extends React.Component {
             deleteField: objectOperations.deleteField.bind(this),
             moveField: objectOperations.moveField.bind(this),
 
-            getObject: objectReferenceManagement.getObject.bind(this),
-            resolveObject: objectReferenceManagement.resolveObject.bind(this),
-            setCurrentObject: currentObjectManagement.setCurrentObject.bind(this),
-            getCurrentObject: currentObjectManagement.getCurrentObject.bind(this),
-            resolveCurrentObject: currentObjectManagement.resolveCurrentObject.bind(this),
+            getObject: objectReferenceOperations.getObject.bind(this),
+            resolveObject: objectReferenceOperations.resolveObject.bind(this),
+            setCurrentObject: currentObjectOperations.setCurrentObject.bind(this),
+            getCurrentObject: currentObjectOperations.getCurrentObject.bind(this),
+            resolveCurrentObject: currentObjectOperations.resolveCurrentObject.bind(this),
 
             updateObjectName: objectPropertiesOperations.updateObjectName.bind(this),
             updateObjectSettings: objectPropertiesOperations.updateObjectSettings.bind(this)
