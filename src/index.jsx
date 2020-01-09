@@ -60,7 +60,7 @@ const objectOperations = Object.freeze({
         // ie. tables.push(), the React-friendly way
         const newTables = clone(this.state.tables);
         mapPath(newTables, [
-            [(node) => node.length, insert(objectOperations._createObject(
+            [(tables) => tables.length, insert(objectOperations._createObject(
                 ObjectTypes.TABLE,
                 Object.assign(
                     { fields: [] }, // Structural attributes of a table
@@ -77,7 +77,7 @@ const objectOperations = Object.freeze({
         // ie. tables.remove(<index of tableName>), the React-friendly way
         const newTables = clone(this.state.tables);
         mapPath(newTables, [
-            [(node) => objectOperations._getObjectIndex(node, tableName), del]
+            [(tables) => objectOperations._getObjectIndex(tables, tableName), del]
         ]);
         this.setState({tables: newTables});
     },
@@ -98,9 +98,9 @@ const objectOperations = Object.freeze({
         // ie. tables[<index of tableName>].fields.push(), the React-friendly way
         const newTables = clone(this.state.tables);
         mapPath(newTables, [
-            [(node) => objectOperations._getObjectIndex(node, tableName), clone],
+            [(tables) => objectOperations._getObjectIndex(tables, tableName), clone],
             ["fields", clone],
-            [(node) => node.length, insert(
+            [(fields) => fields.length, insert(
                 objectOperations._createObject(ObjectTypes.FIELD, fieldSpec)
             )]
         ]);
@@ -115,9 +115,9 @@ const objectOperations = Object.freeze({
         // ie. tables[<index of tableName>].fields.remove(<index of fieldName>), the React-friendly way
         const newTables = clone(this.state.tables);
         mapPath(newTables, [
-            [(node) => objectOperations._getObjectIndex(node, tableName), clone],
+            [(tables) => objectOperations._getObjectIndex(tables, tableName), clone],
             ["fields", clone],
-            [(node) => objectOperations._getObjectIndex(node, fieldName), del]
+            [(fields) => objectOperations._getObjectIndex(fields, fieldName), del]
         ]);
         this.setState({tables: newTables});
     },
