@@ -84,9 +84,9 @@ const objectPropertiesOperations = Object.freeze({
             [objectHelpers.indexOfObject(tableName), clone],
             [
                 "settings",
-                replace(objectPropertiesOperations._mergeObjectSettings(
-                    ObjectTypes.TABLE, table.settings, newSettings
-                ))
+                (settings) => objectPropertiesOperations._mergeObjectSettings(
+                    ObjectTypes.TABLE, settings, newSettings
+                )
             ]
         ]);
         this.setState({tables: newTables});
@@ -103,9 +103,9 @@ const objectPropertiesOperations = Object.freeze({
             [objectHelpers.indexOfObject(fieldName), clone],
             [
                 "settings",
-                replace(objectPropertiesOperations._mergeObjectSettings(
-                    ObjectTypes.FIELD, field.settings, newSettings
-                ))
+                (settings) => objectPropertiesOperations._mergeObjectSettings(
+                    ObjectTypes.FIELD, settings, newSettings
+                )
             ]
         ]);
         this.setState({tables: newTables});
