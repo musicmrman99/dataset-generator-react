@@ -398,7 +398,7 @@ const globalOperations = Object.freeze({
             const newTable = clone(table);
             newTable["fields"] = clone(newTable["fields"]).map((field) => {
                 const newField = clone(field);
-    
+
                 const actionList = [];
                 if (newField["settings"]["keySettings"]["foreignKey"] === false) {
                     actionList.push([
@@ -430,13 +430,13 @@ const globalOperations = Object.freeze({
                         ["randomNumber", del]
                     ]);
                 }
-    
+
                 mapPaths(newField, actionList);
                 return newField;
             });
             return newTable;
         });
-    
+
         return {
             "general": {"output-format": output_format},
             "tables": sendTables
@@ -463,8 +463,8 @@ const globalOperations = Object.freeze({
     }
 });
 
-// This is the the part of the page management system that only the top-level
-// App will interface with. See globalOperations for the parts of the page
+// This is the part of the page management system that only the top-level App
+// will interface with. See globalOperations for the parts of the page
 // management system accessible to sub-components.
 const pageManagement = Object.freeze({
     // Based on https://stackoverflow.com/a/7317311
