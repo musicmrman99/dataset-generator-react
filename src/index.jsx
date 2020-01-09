@@ -13,7 +13,8 @@ import Footer from './footer';
 import { ObjectTypes, ObjectSettingsDefs } from './types';
 import { Trees, Selectors, TraversalConflictPriority, isSpecialNode } from './helpers/trees';
 import { fetchFile } from './helpers/fetch-helpers';
-import { mapPaths, del, clone } from './helpers/map-path'; // Object manipulation
+import { mapPaths, mapPath } from './helpers/map-path'; // Object manipulation
+import { del, clone, insert } from './helpers/map-utils'; // Useful for object manipulation
 import pathHelpers, { Slashes } from './helpers/path'; // String manipulation
 import ResourceManager from './helpers/resource-manager';
 window.resourceManager = new ResourceManager();
@@ -48,50 +49,69 @@ const objectOperations = Object.freeze({
         );
     },
 
+    _getObjectIndex(node, name) {
+        return node.findIndex((table) => (table.name === name));
+    },
+    _getObject(node, name) {
+        return node.find((table) => (table.name === name));
+    },
+
     createTable (tableSpec) {
-        // Ensure that the name is unique
-        if ("name" in tableSpec) {
-            tableSpec.name = getUniqueName(tableSpec.name,
-                this.state.tables.map((table) => table.name)
-            )
+        // Ensure that the name exists and is unique in the table set
+        if (!("name" in tableSpec)) {
+            throw Error("createTable(spec): spec must contain a 'name' property");
         }
+        tableSpec.name = getUniqueName(tableSpec.name,
+            this.state.tables.map((table) => table.name)
+        )
 
         // ie. tables.push(), the React-friendly way
-        const newTable = objectOperations._createObject(ObjectTypes.TABLE,
-            Object.assign({ // Additional things required by a table object
-                fields: []
-            }, tableSpec));
-        const newTables = this.state.tables.concat(newTable);
+        const newTables = clone(this.state.tables);
+        mapPath(newTables, [
+            [(node) => node.length, insert(objectOperations._createObject(
+                ObjectTypes.TABLE,
+                Object.assign(
+                    { fields: [] }, // Structural attributes of a table
+                    tableSpec
+                )
+            ))]
+        ]);
         this.setState({tables: newTables});
     },
 
-    deleteTable (name) {
-        assert.tableExists(this.state.tables, name)
+    deleteTable (tableName) {
+        assert.tableExists(this.state.tables, tableName)
 
-        // Filter out the given table
-        const newTables = this.state.tables.filter((table) => (table.name !== name));
+        // ie. tables.remove(<index of tableName>), the React-friendly way
+        const newTables = clone(this.state.tables);
+        mapPath(newTables, [
+            [(node) => objectOperations._getObjectIndex(node, tableName), del]
+        ]);
         this.setState({tables: newTables});
     },
 
     createField(tableName, fieldSpec) {
         // Ensure the table exists (this should never fail, but you never know)
-        assert.tableExists(this.state.tables, tableName)
+        assert.tableExists(this.state.tables, tableName);
 
-        // Ensure that the name is unique in this table
-        if ("name" in fieldSpec) {
-            const table = this.state.tables.find((table) => table.name === tableName)
-            fieldSpec.name = getUniqueName(fieldSpec.name,
-                table.fields.map((field) => field.name)
-            )
+        // Ensure that the name exists and is unique in this table
+        if (!("name" in fieldSpec)) {
+            throw Error("createField(spec): spec must contain a 'name' property");
         }
+        const table = objectOperations._getObject(this.state.tables, tableName);
+        fieldSpec.name = getUniqueName(fieldSpec.name,
+            table.fields.map((field) => field.name)
+        );
 
-        // ie. tables[tableName].fields.push(), the React-friendly way
-        const newField = objectOperations._createObject(ObjectTypes.FIELD, fieldSpec);
-        const newTables = this.state.tables.slice();
-        const tableIndex = newTables.findIndex((table) => table.name === tableName);
-        const table = newTables[tableIndex] = Object.assign({}, newTables[tableIndex]);
-        table.fields = table.fields.concat(newField);
-
+        // ie. tables[<index of tableName>].fields.push(), the React-friendly way
+        const newTables = clone(this.state.tables);
+        mapPath(newTables, [
+            [(node) => objectOperations._getObjectIndex(node, tableName), clone],
+            ["fields", clone],
+            [(node) => node.length, insert(
+                objectOperations._createObject(ObjectTypes.FIELD, fieldSpec)
+            )]
+        ]);
         this.setState({tables: newTables});
     },
 
@@ -100,12 +120,13 @@ const objectOperations = Object.freeze({
         assert.tableExists(this.state.tables, tableName);
         assert.fieldExists(this.state.tables, tableName, fieldName);
 
-        // Remove the field
-        const newTables = this.state.tables.slice();
-        const tableIndex = newTables.findIndex((table) => table.name === tableName);
-        const table = newTables[tableIndex] = Object.assign({}, newTables[tableIndex]);
-        table.fields = table.fields.filter((field) => field.name !== fieldName);
-
+        // ie. tables[<index of tableName>].fields.remove(<index of fieldName>), the React-friendly way
+        const newTables = clone(this.state.tables);
+        mapPath(newTables, [
+            [(node) => objectOperations._getObjectIndex(node, tableName), clone],
+            ["fields", clone],
+            [(node) => objectOperations._getObjectIndex(node, fieldName), del]
+        ]);
         this.setState({tables: newTables});
     },
 
@@ -115,46 +136,45 @@ const objectOperations = Object.freeze({
         assert.fieldExists(this.state.tables, fromTableName, fieldName);
 
         // From here, *some* field will be moved *somewhere*
-        const newTables = this.state.tables.slice();
+        const newTables = clone(this.state.tables);
 
-        // Move the field to the end of the same table
-        if (fromTableName === toTableName) {
-            // Find the objects represented by the given names
-            const tableIndex = newTables.findIndex((table) => table.name === fromTableName);
-            const table = newTables[tableIndex] = Object.assign({}, newTables[tableIndex]);
-            table.fields = table.fields.slice();
+        // WARNING: Incoming higher-scope-than-is-nice variable hack and
+        //          somewhat-difficult-to-read code ...
+        //          For ease of understanding, READ COMMENTS FROM TOP TO BOTTOM.
+        var moveField = null;
 
-            // The field's name is already unique, or it wouldn't be called what it is!
+        // Delete (and grab fromField)
+        mapPath(newTables, [
+            [(tables) => objectOperations._getObjectIndex(tables, fromTableName), clone], // Clone fromTable
+            ["fields", clone], // Clone fromTable.fields
+            [
+                (fields) => objectOperations._getObjectIndex(fields, fieldName),
+                (field) => {
+                    moveField = clone(field); // Grab moveField (copy)
+                    return del(field); // Delete moveField from fromTable
+                }
+            ]
+        ]);
 
-            // Move the field
-            const fieldIndex = table.fields.findIndex((field) => field.name === fieldName);
-            const field = table.fields[fieldIndex]; // Keep reference
-            table.fields.splice(fieldIndex, 1); // Remove
-            table.fields.push(field); // Push back
+        // Insert (fromField)
+        mapPath(newTables, [
+            [(tables) => objectOperations._getObjectIndex(tables, toTableName), clone], // Clone toTable
+            [
+                "fields",
+                (fields) => {
+                    // Ensure that moveField's name is unique in toTable (this is why we copied moveField)
+                    moveField.name = getUniqueName(moveField.name,
+                        fields.map((field) => field.name)
+                    )
 
-        // Move the field to the end of the other table
-        } else {
-            // Find the objects represented by the given names (and make necessary copies)
-            const fromTableIndex = newTables.findIndex((table) => table.name === fromTableName);
-            const fromTable = newTables[fromTableIndex] = Object.assign({}, newTables[fromTableIndex]);
-            fromTable.fields = fromTable.fields.slice();
-
-            const toTableIndex = newTables.findIndex((table) => table.name === toTableName);
-            const toTable = newTables[toTableIndex] = Object.assign({}, newTables[toTableIndex]);
-            toTable.fields = toTable.fields.slice();
-        
-            const fieldIndex = fromTable.fields.findIndex((field) => field.name === fieldName);
-            const field = Object.assign({}, fromTable.fields[fieldIndex]);
-
-            // Ensure that the name is unique in toTable
-            field.name = getUniqueName(field.name,
-                toTable.fields.map((field) => field.name)
-            )
-
-            // Move the field
-            fromTable.fields.splice(fieldIndex, 1);
-            toTable.fields.push(field);
-        }
+                    return clone(fields); // Clone toTable.fields
+                }
+            ],
+            [
+                (fields) => fields.length,
+                insert(moveField) // Re-insert moveField
+            ]
+        ]);
 
         this.setState({tables: newTables});
     }
