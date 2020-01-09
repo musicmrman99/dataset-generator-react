@@ -39,7 +39,8 @@ const objectPropertiesOperations = Object.freeze({
 
         // Ensure that the new name is unique
         newName = getUniqueName(newName,
-            this.state.tables.map((table) => table.name)
+            objectHelpers.getNamesOf(this.state.tables)
+                .filter((obj) => obj !== tableName) // Exclude current name
         )
 
         const newTables = clone(this.state.tables);
@@ -65,13 +66,18 @@ const objectPropertiesOperations = Object.freeze({
                     // Ensure that the new name is unique in this table
                     newName = getUniqueName(newName,
                         objectHelpers.getNamesOf(fields)
+                            .filter((obj) => obj !== fieldName) // Exclude current name
                     )
-            
+
                     return clone(fields);
                 }
             ],
             [objectHelpers.indexOfObject(fieldName), clone],
-            ["name", replace(newName)]
+
+            // NOTE: Can't use replace(), as newName needs to be late-bound.
+            // Otherwise, we would have to map the same path multiple times to
+            // different levels, which isn't nicely scalable.
+            ["name", (name) => newName]
         ]);
         this.setState({tables: newTables});
     },

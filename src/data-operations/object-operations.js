@@ -16,7 +16,7 @@ const objectOperations = Object.freeze({
             throw Error("createTable(spec): spec must contain a 'name' property");
         }
         tableSpec.name = getUniqueName(tableSpec.name,
-            this.state.tables.map((table) => table.name)
+            objectHelpers.getNamesOf(this.state.tables)
         )
 
         // ie. tables.push(), the React-friendly way
