@@ -22,21 +22,10 @@ window.resourceManager = new ResourceManager();
 import getUniqueName from './helpers/get-unique-name';
 import assert from './data-operations/helpers/assert';
 
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// WARNING: DO NOT USE METHODS DESIGNED TO BE BOUND TO 'App' STAND-ALONE
-// For the rest of this module (up to the definition of 'App' itself), the
-// following must be followed:
-// - Non-private methods (those that do not start with an underscore) MUST be
-//   bound to 'App'.
-// - Private methods may be applied to 'App' or not, depending on the method's
-//   purpose. As such, they may be called using either:
-//     <whatever>Operations._privateMethod([...args])
-//   Or (where 'this' is 'App', as the method calling the private method MUST be
-//   applied to 'App'):
-//     <whatever>Operations._privateMethod.apply(this, [...args])
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 const objectOperations = Object.freeze({
+    // Private Pure Methods
+    // ----------
+
     _createObject(type, spec) {
         return Object.assign(
             // Defaults
@@ -55,6 +44,9 @@ const objectOperations = Object.freeze({
     _getObject(node, name) {
         return node.find((table) => (table.name === name));
     },
+
+    // Public Methods
+    // ----------
 
     createTable (tableSpec) {
         // Ensure that the name exists and is unique in the table set
@@ -181,12 +173,18 @@ const objectOperations = Object.freeze({
 });
 
 const objectReferenceOperations = Object.freeze({
+    // Private Pure Methods
+    // ----------
+
     _objRef(objType, objPath) {
         return Object.freeze({
             type: objType,
             path: pathHelpers.split_path(objPath, Slashes.LEADING)
         });
     },
+
+    // Private Non-Pure Methods
+    // ----------
 
     _checkValid(objRef) {
         // Check the object type
@@ -207,9 +205,12 @@ const objectReferenceOperations = Object.freeze({
         }
     },
 
+    // Public Methods
+    // ----------
+
     getObject(objType, objPath) {
-        const objRef = objectReferenceOperations._objRef.apply(this, [objType, objPath]);
-        objectReferenceOperations._checkValid.apply(this, [objRef]);
+        const objRef = objectReferenceOperations._objRef(objType, objPath);
+        objectReferenceOperations._checkValid.call(this, objRef);
         return objRef;
     },
 
@@ -229,6 +230,9 @@ const objectReferenceOperations = Object.freeze({
 });
 
 const currentObjectOperations = Object.freeze({
+    // Public Methods
+    // ----------
+
     // If someone uses this to edit the current object, then they'll get what
     // they deserve - a lot of problems. It's called ***GET*** for a reason! :)
     // (See 'setCurrentObject()' for a safe way)
@@ -253,6 +257,9 @@ const currentObjectOperations = Object.freeze({
 });
 
 const objectPropertiesOperations = Object.freeze({
+    // Private Pure Methods
+    // ----------
+
     _mergeObjectSettings(type, oldSettings, newSettings) {
         return Trees.translate(
             [newSettings, oldSettings, ObjectSettingsDefs[type].defaults],
@@ -272,6 +279,9 @@ const objectPropertiesOperations = Object.freeze({
             }
         );
     },
+
+    // Private Non-Pure Methods
+    // ----------
 
     _updateTableName(tableName, newName) {
         assert.tableExists(this.state.tables, tableName);
@@ -342,17 +352,20 @@ const objectPropertiesOperations = Object.freeze({
         this.setState({tables: newTables});
     },
 
+    // Public Methods
+    // ----------
+
     updateObjectName(objInfo, newName) {
         // FIXME: Just do it the hacky way for now
         switch (objInfo.type) {
             case ObjectTypes.TABLE:
-                objectPropertiesOperations._updateTableName.apply(
-                    this, [objInfo.path[0], newName]);
+                objectPropertiesOperations._updateTableName.call(
+                    this, objInfo.path[0], newName);
                 break;
 
             case ObjectTypes.FIELD:
-                objectPropertiesOperations._updateFieldName.apply(
-                    this, [objInfo.path[0], objInfo.path[1], newName]);
+                objectPropertiesOperations._updateFieldName.call(
+                    this, objInfo.path[0], objInfo.path[1], newName);
                 break;
         }
     },
@@ -361,22 +374,21 @@ const objectPropertiesOperations = Object.freeze({
         // FIXME: Just do it the hacky way for now
         switch (objInfo.type) {
             case ObjectTypes.TABLE:
-                objectPropertiesOperations._updateTableSettings.apply(
-                    this, [objInfo.path[0], newSettings]);
+                objectPropertiesOperations._updateTableSettings.call(
+                    this, objInfo.path[0], newSettings);
                 break;
 
             case ObjectTypes.FIELD:
-                objectPropertiesOperations._updateFieldSettings.apply(
-                    this, [objInfo.path[0], objInfo.path[1], newSettings]);
+                objectPropertiesOperations._updateFieldSettings.call(
+                    this, objInfo.path[0], objInfo.path[1], newSettings);
                 break;
         }
     }
 });
 
 const globalOperations = Object.freeze({
-    getVersion() {
-        return this.state.version;
-    },
+    // Private Pure Methods
+    // ----------
 
     _build_generate_request(output_format, tables) {
         // For immutability (ie. so as not to modify the 'full' representation of
@@ -429,6 +441,13 @@ const globalOperations = Object.freeze({
             "general": {"output-format": output_format},
             "tables": sendTables
         };
+    },
+
+    // Public Methods
+    // ----------
+
+    getVersion() {
+        return this.state.version;
     },
 
     generate() {
