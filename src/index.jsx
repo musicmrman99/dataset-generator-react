@@ -22,11 +22,13 @@ window.resourceManager = new ResourceManager();
 import getUniqueName from './helpers/get-unique-name';
 import assert from './data-operations/helpers/assert';
 
-const objectOperations = Object.freeze({
-    // Private Pure Methods
+const objectHelpers = Object.freeze({
+    // Public Pure Methods
     // ----------
 
-    _createObject(type, spec) {
+    // Helpers for single objects
+
+    createObject(type, spec) {
         return Object.assign(
             // Defaults
             {
@@ -38,17 +40,33 @@ const objectOperations = Object.freeze({
         );
     },
 
-    _getObjectIndex(node, name) {
-        return node.findIndex((table) => (table.name === name));
+    getObjectIndex(objects, name) {
+        return objects.findIndex((object) => (object.name === name));
     },
-    _getObject(node, name) {
-        return node.find((table) => (table.name === name));
+    getObject(objects, name) {
+        return objects.find((object) => (object.name === name));
     },
 
-    // Public Methods
+    // Helpers for multiple objects
+
+    getNamesOf(objects) {
+        return objects.map((obj) => obj.name);
+    },
+
+    // Named mapPath() Utilities
     // ----------
 
-    createTable (tableSpec) {
+    afterLastIndex: (objects) => objects.length,
+    indexOfObject(name) {
+        return (objects) => objectHelpers.getObjectIndex(objects, name);
+    }
+});
+
+const objectOperations = Object.freeze({
+    // Public Non-Pure Methods
+    // ----------
+
+    createTable(tableSpec) {
         // Ensure that the name exists and is unique in the table set
         if (!("name" in tableSpec)) {
             throw Error("createTable(spec): spec must contain a 'name' property");
@@ -60,7 +78,7 @@ const objectOperations = Object.freeze({
         // ie. tables.push(), the React-friendly way
         const newTables = clone(this.state.tables);
         mapPath(newTables, [
-            [(tables) => tables.length, insert(objectOperations._createObject(
+            [objectHelpers.afterLastIndex, insert(objectHelpers.createObject(
                 ObjectTypes.TABLE,
                 Object.assign(
                     { fields: [] }, // Structural attributes of a table
@@ -71,13 +89,13 @@ const objectOperations = Object.freeze({
         this.setState({tables: newTables});
     },
 
-    deleteTable (tableName) {
+    deleteTable(tableName) {
         assert.tableExists(this.state.tables, tableName)
 
         // ie. tables.remove(<index of tableName>), the React-friendly way
         const newTables = clone(this.state.tables);
         mapPath(newTables, [
-            [(tables) => objectOperations._getObjectIndex(tables, tableName), del]
+            [objectHelpers.indexOfObject(tableName), del]
         ]);
         this.setState({tables: newTables});
     },
@@ -90,24 +108,24 @@ const objectOperations = Object.freeze({
         if (!("name" in fieldSpec)) {
             throw Error("createField(spec): spec must contain a 'name' property");
         }
-        const table = objectOperations._getObject(this.state.tables, tableName);
+        const table = objectHelpers.getObject(this.state.tables, tableName);
         fieldSpec.name = getUniqueName(fieldSpec.name,
-            table.fields.map((field) => field.name)
+            objectHelpers.getNamesOf(table.fields)
         );
 
         // ie. tables[<index of tableName>].fields.push(), the React-friendly way
         const newTables = clone(this.state.tables);
         mapPath(newTables, [
-            [(tables) => objectOperations._getObjectIndex(tables, tableName), clone],
+            [objectHelpers.indexOfObject(tableName), clone],
             ["fields", clone],
-            [(fields) => fields.length, insert(
-                objectOperations._createObject(ObjectTypes.FIELD, fieldSpec)
+            [objectHelpers.afterLastIndex, insert(
+                objectHelpers.createObject(ObjectTypes.FIELD, fieldSpec)
             )]
         ]);
         this.setState({tables: newTables});
     },
 
-    deleteField (tableName, fieldName) {
+    deleteField(tableName, fieldName) {
         // Ensure the table exists (this should never fail, but you never know)
         assert.tableExists(this.state.tables, tableName);
         assert.fieldExists(this.state.tables, tableName, fieldName);
@@ -115,9 +133,9 @@ const objectOperations = Object.freeze({
         // ie. tables[<index of tableName>].fields.remove(<index of fieldName>), the React-friendly way
         const newTables = clone(this.state.tables);
         mapPath(newTables, [
-            [(tables) => objectOperations._getObjectIndex(tables, tableName), clone],
+            [objectHelpers.indexOfObject(tableName), clone],
             ["fields", clone],
-            [(fields) => objectOperations._getObjectIndex(fields, fieldName), del]
+            [objectHelpers.indexOfObject(fieldName), del]
         ]);
         this.setState({tables: newTables});
     },
@@ -135,10 +153,10 @@ const objectOperations = Object.freeze({
 
         // Delete (and grab fromField)
         mapPath(newTables, [
-            [(tables) => objectOperations._getObjectIndex(tables, fromTableName), clone], // Clone fromTable
+            [objectHelpers.indexOfObject(fromTableName), clone], // Clone fromTable
             ["fields", clone], // Clone fromTable.fields
             [
-                (fields) => objectOperations._getObjectIndex(fields, fieldName),
+                objectHelpers.indexOfObject(fieldName),
                 (field) => {
                     moveField = clone(field); // Grab moveField (copy)
                     return del(field); // Delete moveField from fromTable
@@ -148,22 +166,19 @@ const objectOperations = Object.freeze({
 
         // Insert (fromField)
         mapPath(newTables, [
-            [(tables) => objectOperations._getObjectIndex(tables, toTableName), clone], // Clone toTable
+            [objectHelpers.indexOfObject(toTableName), clone], // Clone toTable
             [
                 "fields",
                 (fields) => {
                     // Ensure that moveField's name is unique in toTable (this is why we copied moveField)
                     moveField.name = getUniqueName(moveField.name,
-                        fields.map((field) => field.name)
+                        objectHelpers.getNamesOf(fields)
                     )
 
                     return clone(fields); // Clone toTable.fields
                 }
             ],
-            [
-                (fields) => fields.length,
-                insert(moveField) // Re-insert moveField
-            ]
+            [objectHelpers.afterLastIndex, insert(moveField)] // Re-insert moveField
         ]);
 
         this.setState({tables: newTables});
@@ -203,7 +218,7 @@ const objectReferenceOperations = Object.freeze({
         }
     },
 
-    // Public Methods
+    // Public Non-Pure Methods
     // ----------
 
     getObject(objType, objPath) {
@@ -228,7 +243,7 @@ const objectReferenceOperations = Object.freeze({
 });
 
 const currentObjectOperations = Object.freeze({
-    // Public Methods
+    // Public Non-Pure Methods
     // ----------
 
     // If someone uses this to edit the current object, then they'll get what
@@ -291,7 +306,7 @@ const objectPropertiesOperations = Object.freeze({
 
         const newTables = clone(this.state.tables);
         mapPath(newTables, [
-            [(tables) => objectOperations._getObjectIndex(tables, tableName), clone],
+            [objectHelpers.indexOfObject(tableName), clone],
             ["name", replace(newName)]
         ]);
         this.setState({tables: newTables});
@@ -302,7 +317,7 @@ const objectPropertiesOperations = Object.freeze({
 
         const newTables = clone(this.state.tables);
         mapPath(newTables, [
-            [(tables) => objectOperations._getObjectIndex(tables, tableName), clone],
+            [objectHelpers.indexOfObject(tableName), clone],
             [
                 "settings",
                 replace(objectPropertiesOperations._mergeObjectSettings(
@@ -321,19 +336,19 @@ const objectPropertiesOperations = Object.freeze({
 
         const newTables = clone(this.state.tables);
         mapPath(newTables, [
-            [(tables) => objectOperations._getObjectIndex(tables, tableName), clone],
+            [objectHelpers.indexOfObject(tableName), clone],
             [
                 "fields",
                 (fields) => {
                     // Ensure that the new name is unique in this table
                     newName = getUniqueName(newName,
-                        fields.map((field) => field.name)
+                        objectHelpers.getNamesOf(fields)
                     )
             
                     return clone(fields);
                 }
             ],
-            [(fields) => objectOperations._getObjectIndex(fields, fieldName), clone],
+            [objectHelpers.indexOfObject(fieldName), clone],
             ["name", replace(newName)]
         ]);
         this.setState({tables: newTables});
@@ -345,9 +360,9 @@ const objectPropertiesOperations = Object.freeze({
 
         const newTables = clone(this.state.tables);
         mapPath(newTables, [
-            [(tables) => objectOperations._getObjectIndex(tables, tableName), clone],
+            [objectHelpers.indexOfObject(tableName), clone],
             ["fields", clone],
-            [(fields) => objectOperations._getObjectIndex(fields, fieldName), clone],
+            [objectHelpers.indexOfObject(fieldName), clone],
             [
                 "settings",
                 replace(objectPropertiesOperations._mergeObjectSettings(
@@ -358,7 +373,7 @@ const objectPropertiesOperations = Object.freeze({
         this.setState({tables: newTables});
     },
 
-    // Public Methods
+    // Public Non-Pure Methods
     // ----------
 
     updateObjectName(objInfo, newName) {
@@ -449,7 +464,7 @@ const globalOperations = Object.freeze({
         };
     },
 
-    // Public Methods
+    // Public Non-Pure Methods
     // ----------
 
     getVersion() {
@@ -473,6 +488,9 @@ const globalOperations = Object.freeze({
 // will interface with. See globalOperations for the parts of the page
 // management system accessible to sub-components.
 const pageManagement = Object.freeze({
+    // Public Non-Pure Methods
+    // ----------
+
     // Based on https://stackoverflow.com/a/7317311
     unloadHandler(shouldUnload, event) {
         const result = shouldUnload();
