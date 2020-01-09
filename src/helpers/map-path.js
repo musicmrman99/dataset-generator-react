@@ -75,38 +75,39 @@ export function mapPath(obj, path, exclude) {
             finalKey = key(objRef);
         }
 
-        // Keep track of current path
+        // Find current path
         const thisPath = pathRef+"/"+finalKey;
 
-        // Do not map items in exclude. This is often used to exclude mapping
-        // items that have already been mapped (see mapPaths()).
-        if (!exclude.includes(thisPath)) {
-            // Don't check whether the finalKey exists yet ...
-
-            // Do the mapping and update the objRef
-            const newVal = fn(objRef[finalKey])
-            if (newVal !== undefined) {
-                objRef[finalKey] = newVal;
-            } else {
-                if (Array.isArray(objRef) && typeof finalKey === "number") {
-                    objRef.splice(finalKey, 1);
-                } else {
-                    delete objRef[finalKey];
-                }
-
-                // If the finalKey didn't exist and still doesn't exist, or if
-                // finalKey stopped existing due to the mapping function, then
-                // return early.
-                break;
-            }
-            objRef = objRef[finalKey];
+        // Do the mapping if not excluded
+        var newVal = undefined;
+        if (exclude.includes(thisPath)) {
+            newVal = objRef[finalKey]; // The same as the old val
+        } else {
+            newVal = fn(objRef[finalKey]) // Could be the same as the old val
 
             // Only update the mapped paths list if it doesn't already contain
             // this path (there's no reason to add duplicate entries)
             pathsMapped.push(thisPath);
         }
 
-        // Always update the pathRef
+        if (newVal !== undefined) {
+            objRef[finalKey] = newVal;
+
+        } else {
+            if (Array.isArray(objRef) && typeof finalKey === "number") {
+                objRef.splice(finalKey, 1);
+            } else {
+                delete objRef[finalKey];
+            }
+
+            // If the finalKey was and still is undefined (doesn't exist), or if
+            // the finalKey was un-defined (stopped existing) by fn, then stop
+            // digging - there's no objects left to dig into.
+            break;
+        }
+
+        // Keep track of current object (objRef) and current path (pathRef)
+        objRef = objRef[finalKey];
         pathRef = thisPath;
     }
 
