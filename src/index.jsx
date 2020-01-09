@@ -14,7 +14,7 @@ import { ObjectTypes, ObjectSettingsDefs } from './types';
 import { Trees, Selectors, TraversalConflictPriority, isSpecialNode } from './helpers/trees';
 import { fetchFile } from './helpers/fetch-helpers';
 import { mapPaths, mapPath } from './helpers/map-path'; // Object manipulation
-import { del, clone, insert } from './helpers/map-utils'; // Useful for object manipulation
+import { del, clone, insert, replace } from './helpers/map-utils'; // Useful for object manipulation
 import pathHelpers, { Slashes } from './helpers/path'; // String manipulation
 import ResourceManager from './helpers/resource-manager';
 window.resourceManager = new ResourceManager();
@@ -130,9 +130,7 @@ const objectOperations = Object.freeze({
         // From here, *some* field will be moved *somewhere*
         const newTables = clone(this.state.tables);
 
-        // WARNING: Incoming higher-scope-than-is-nice variable hack and
-        //          somewhat-difficult-to-read code ...
-        //          For ease of understanding, READ COMMENTS FROM TOP TO BOTTOM.
+        // WARNING: moveField is modified in-place during object mapping!
         var moveField = null;
 
         // Delete (and grab fromField)
@@ -291,23 +289,27 @@ const objectPropertiesOperations = Object.freeze({
             this.state.tables.map((table) => table.name)
         )
 
-        const newTables = this.state.tables.slice();
-        const tableIndex = newTables.findIndex((table) => table.name === tableName);
-        const table = newTables[tableIndex] = Object.assign({}, newTables[tableIndex]);
-        table.name = newName;
-
+        const newTables = clone(this.state.tables);
+        mapPath(newTables, [
+            [(tables) => objectOperations._getObjectIndex(tables, tableName), clone],
+            ["name", replace(newName)]
+        ]);
         this.setState({tables: newTables});
     },
 
     _updateTableSettings(tableName, newSettings) {
         assert.tableExists(this.state.tables, tableName);
 
-        const newTables = this.state.tables.slice();
-        const tableIndex = newTables.findIndex((table) => table.name === tableName);
-        const table = newTables[tableIndex] = Object.assign({}, newTables[tableIndex]);
-        table.settings = objectPropertiesOperations._mergeObjectSettings(
-            ObjectTypes.TABLE, table.settings, newSettings)
-
+        const newTables = clone(this.state.tables);
+        mapPath(newTables, [
+            [(tables) => objectOperations._getObjectIndex(tables, tableName), clone],
+            [
+                "settings",
+                replace(objectPropertiesOperations._mergeObjectSettings(
+                    ObjectTypes.TABLE, table.settings, newSettings
+                ))
+            ]
+        ]);
         this.setState({tables: newTables});
     },
 
@@ -315,21 +317,25 @@ const objectPropertiesOperations = Object.freeze({
         assert.tableExists(this.state.tables, tableName);
         assert.fieldExists(this.state.tables, tableName, fieldName);
 
-        const newTables = this.state.tables.slice();
+        // WARNING: newName is modified in-place during object mapping!
 
-        const tableIndex = newTables.findIndex((table) => table.name === tableName);
-        const table = newTables[tableIndex] = Object.assign({}, newTables[tableIndex]);
-
-        // Ensure that the new name is unique in this table
-        newName = getUniqueName(newName,
-            table.fields.map((field) => field.name)
-        )
-
-        table.fields = table.fields.slice();
-        const fieldIndex = table.fields.findIndex((field) => field.name === fieldName);
-        const field = table.fields[fieldIndex] = Object.assign({}, table.fields[fieldIndex]);
-        field.name = newName;
-
+        const newTables = clone(this.state.tables);
+        mapPath(newTables, [
+            [(tables) => objectOperations._getObjectIndex(tables, tableName), clone],
+            [
+                "fields",
+                (fields) => {
+                    // Ensure that the new name is unique in this table
+                    newName = getUniqueName(newName,
+                        fields.map((field) => field.name)
+                    )
+            
+                    return clone(fields);
+                }
+            ],
+            [(fields) => objectOperations._getObjectIndex(fields, fieldName), clone],
+            ["name", replace(newName)]
+        ]);
         this.setState({tables: newTables});
     },
 
@@ -337,18 +343,18 @@ const objectPropertiesOperations = Object.freeze({
         assert.tableExists(this.state.tables, tableName);
         assert.fieldExists(this.state.tables, tableName, fieldName);
 
-        const newTables = this.state.tables.slice();
-
-        const tableIndex = newTables.findIndex((table) => table.name === tableName);
-        const table = newTables[tableIndex] = Object.assign({}, newTables[tableIndex]);
-
-        table.fields = table.fields.slice();
-        const fieldIndex = table.fields.findIndex((field) => field.name === fieldName);
-        const field = table.fields[fieldIndex] = Object.assign({}, table.fields[fieldIndex]);
-
-        field.settings = objectPropertiesOperations._mergeObjectSettings(
-            ObjectTypes.FIELD, field.settings, newSettings);
-
+        const newTables = clone(this.state.tables);
+        mapPath(newTables, [
+            [(tables) => objectOperations._getObjectIndex(tables, tableName), clone],
+            ["fields", clone],
+            [(fields) => objectOperations._getObjectIndex(fields, fieldName), clone],
+            [
+                "settings",
+                replace(objectPropertiesOperations._mergeObjectSettings(
+                    ObjectTypes.FIELD, field.settings, newSettings
+                ))
+            ]
+        ]);
         this.setState({tables: newTables});
     },
 
