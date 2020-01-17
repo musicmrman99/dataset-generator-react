@@ -16,6 +16,9 @@ import Panel from './panel';
 import Workspace from './workspace';
 import Footer from './footer';
 
+// Helpers
+import { bindAllMethods } from './helpers/bind-many';
+
 // Data Operations
 import objectOperations from './data-operations/object-operations';
 import objectPropertiesOperations from './data-operations/object-properties-operations';
@@ -39,27 +42,17 @@ export default class App extends React.Component {
             currentObject: {type: null, path: null}
         }
 
-        this.actions = {
-            createTable: objectOperations.createTable.bind(this),
-            deleteTable: objectOperations.deleteTable.bind(this),
-            createField: objectOperations.createField.bind(this),
-            deleteField: objectOperations.deleteField.bind(this),
-            moveField: objectOperations.moveField.bind(this),
+        // Reduce operation sets into single objects, binding them to App as we
+        // go.
 
-            getObject: objectReferenceOperations.getObject.bind(this),
-            resolveObject: objectReferenceOperations.resolveObject.bind(this),
-            setCurrentObject: currentObjectOperations.setCurrentObject.bind(this),
-            getCurrentObject: currentObjectOperations.getCurrentObject.bind(this),
-            resolveCurrentObject: currentObjectOperations.resolveCurrentObject.bind(this),
+        this.actions = bindAllMethods(this,
+            objectOperations,
+            objectPropertiesOperations,
+            objectReferenceOperations,
+            currentObjectOperations
+        );
 
-            updateObjectName: objectPropertiesOperations.updateObjectName.bind(this),
-            updateObjectSettings: objectPropertiesOperations.updateObjectSettings.bind(this)
-        }
-
-        this.globalActions = {
-            getVersion: globalOperations.getVersion.bind(this),
-            generate: globalOperations.generate.bind(this)
-        }
+        this.globalActions = bindAllMethods(this, globalOperations);
 
         // NOTE: This can still be overriden by the user to discard changes.
         this.shouldPageUnload = pageManagement.shouldPageUnload.bind(this);
