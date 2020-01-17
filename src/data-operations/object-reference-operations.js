@@ -1,5 +1,6 @@
 import { ObjectTypes } from '../types';
 import pathHelpers, { Slashes } from '../helpers/path';
+import objectHelpers from './helpers/object-helpers';
 import assert from './helpers/assert';
 
 const _objectReferenceOperations = Object.freeze({
@@ -48,14 +49,14 @@ const objectReferenceOperations = Object.freeze({
 
     resolveObject(objRef) {
         // It's always going to need to dereference the table part.
-        const tableIndex = this.state.tables.findIndex(
-            (table) => table.name === objRef.path[0]);
+        const tableIndex = objectHelpers.getObjectIndex(
+            this.state.tables, objRef.path[0]);
         const table = this.state.tables[tableIndex];
         if (objRef.type === ObjectTypes.TABLE) return table;
 
         // Next, dereference the field
-        const fieldIndex = table.fields.findIndex(
-            (field) => field.name === objRef.path[1]);
+        const fieldIndex = objectHelpers.getObjectIndex(
+            table.fields, objRef.path[1]);
         const field = table.fields[fieldIndex];
         if (objRef.type === ObjectTypes.FIELD) return field;
     }
