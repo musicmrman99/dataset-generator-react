@@ -2,11 +2,11 @@ import { fetchFile } from '../helpers/fetch-helpers';
 import { mapPaths } from '../helpers/map-path';
 import { del, clone } from '../helpers/map-utils';
 
-const globalOperations = Object.freeze({
+const _globalOperations = Object.freeze({
     // Private Pure Methods
     // ----------
 
-    _build_generate_request(output_format, tables) {
+    build_generate_request(output_format, tables) {
         // For immutability (ie. so as not to modify the 'full' representation of
         // the UI's data), the data structure will have to be cloned all the way
         // down to any modifications.
@@ -57,8 +57,10 @@ const globalOperations = Object.freeze({
             "general": {"output-format": output_format},
             "tables": sendTables
         };
-    },
+    }
+})
 
+const globalOperations = Object.freeze({
     // Public Non-Pure Methods
     // ----------
 
@@ -70,7 +72,7 @@ const globalOperations = Object.freeze({
         fetchFile("POST", "/data-api/1.0.0/generate",
             { "Content-Type": "application/json" },
             // TODO: allow "single-table" output format (global object)
-            JSON.stringify(globalOperations._build_generate_request(
+            JSON.stringify(_globalOperations.build_generate_request(
                 "multi-table", this.state.tables
             )),
             // TODO: allow the user to enter the filename (global object)

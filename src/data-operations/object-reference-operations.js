@@ -2,11 +2,11 @@ import { ObjectTypes } from '../types';
 import pathHelpers, { Slashes } from '../helpers/path';
 import assert from './helpers/assert';
 
-const objectReferenceOperations = Object.freeze({
+const _objectReferenceOperations = Object.freeze({
     // Private Pure Methods
     // ----------
 
-    _objRef(objType, objPath) {
+    objRef(objType, objPath) {
         return Object.freeze({
             type: objType,
             path: pathHelpers.split_path(objPath, Slashes.LEADING)
@@ -16,7 +16,7 @@ const objectReferenceOperations = Object.freeze({
     // Private Non-Pure Methods
     // ----------
 
-    _checkValid(objRef) {
+    checkValid(objRef) {
         // Check the object type
         // If objRef.type is not in ObjectTypes, which should (hopefully) never happen
         if (!Object.values(ObjectTypes).some((type) => type === objRef.type)) {
@@ -33,14 +33,16 @@ const objectReferenceOperations = Object.freeze({
         if (objRef.type === ObjectTypes.FIELD) {
             assert.fieldExists(this.state.tables, tableName, fieldName);
         }
-    },
+    }
+});
 
+const objectReferenceOperations = Object.freeze({
     // Public Non-Pure Methods
     // ----------
 
     getObject(objType, objPath) {
-        const objRef = objectReferenceOperations._objRef(objType, objPath);
-        objectReferenceOperations._checkValid.call(this, objRef);
+        const objRef = _objectReferenceOperations.objRef(objType, objPath);
+        _objectReferenceOperations.checkValid.call(this, objRef);
         return objRef;
     },
 
