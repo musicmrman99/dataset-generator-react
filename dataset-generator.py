@@ -2,7 +2,7 @@
 # NOTE: use sqlalchemy?
 
 # General
-import os.path
+import posixpath
 import json
 import jsonschema
 from components import schemas
@@ -26,7 +26,7 @@ resourceTypes = {
     "image": "images"
 }
 
-@app.route(os.path.normpath(resourceAPI["route"] + '/types'))
+@app.route(posixpath.normpath(resourceAPI["route"] + '/types'))
 def list_types():
     # Return an identity mapping of valid types, which makes it usable as an
     # enum on the client-side.
@@ -34,20 +34,20 @@ def list_types():
         "image": "image"
     })
 
-@app.route(os.path.normpath(resourceAPI["route"] + '/resource'))
+@app.route(posixpath.normpath(resourceAPI["route"] + '/resource'))
 def get_resource():
     args = flask.request.args
 
     resourceType = args["resourceType"]
     resource = args["resource"]
 
-    relativePath = os.path.normpath( "/".join([
+    relativePath = posixpath.normpath( "/".join([
         "static", resourceTypes[resourceType], resource
     ]) )
 
     return json.dumps({
         "path": "/" + relativePath,
-        "exists": os.path.isfile(os.path.abspath(relativePath))
+        "exists": posixpath.isfile(posixpath.abspath(relativePath))
     })
 
 # Schemas API
@@ -55,7 +55,7 @@ def get_resource():
 
 schemasAPI = consts.APIs["schemas"]
 
-@app.route(os.path.normpath(schemasAPI["route"] + "/<name>"), methods=["GET"])
+@app.route(posixpath.normpath(schemasAPI["route"] + "/<name>"), methods=["GET"])
 def get_schema(**url_vars):
     try:
         schema = schemas.Schema(url_vars["name"])
@@ -73,7 +73,7 @@ dataAPI = consts.APIs["data"]
 # Schema("/generate") => import <webroot>/schemas/generate.schema.json
 generate_schema = schemas.Schema("/generate")
 
-@app.route(os.path.normpath(dataAPI["route"] + "/generate"), methods=["POST"])
+@app.route(posixpath.normpath(dataAPI["route"] + "/generate"), methods=["POST"])
 def generate_endpoint():
     global generate_schema
 
