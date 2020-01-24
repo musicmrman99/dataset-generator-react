@@ -1,6 +1,6 @@
 import json
 import jsonschema
-import os.path
+import posixpath
 import warnings
 
 from components import consts
@@ -125,7 +125,7 @@ class Schema:
             # Generate the schema's ID
             self._schema["$id"] = (
                 consts.WEB_ROOT_URL +
-                os.path.normpath(
+                posixpath.normpath(
                     consts.APIs["schemas"]["route"] + self._schema_path) +
                 ("" if self._schema_fragment is None else self._schema_fragment)
             )
