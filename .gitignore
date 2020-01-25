@@ -1,9 +1,9 @@
-# Dependencies, meta project files, hidden files
+# Build/Runtime Environemnt, Running the Web App
+# (ie. build/run dependencies, build files, cache files, etc.)
+conda-env
 node_modules
-_*_/
-.*
-!.babelrc
-!.gitignore
-
-# Build files
 /static/js/
+__pycache__
+
+# Development Environment Files
+.vscode
