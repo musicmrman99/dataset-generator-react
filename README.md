@@ -8,7 +8,7 @@ given a relational structure and generator parameters.
 ### Install & Initial Setup
 
 1. Install conda (anaconda or miniconda, I use miniconda): https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html
-  - If using Git Bash, add conda to the git bash environment by adding `. <conda-install-dir>/etc/profile.d/conda.sh` to your `~/.bash_profile` or `~/.bashrc`.
+   - If using Git Bash, add conda to the git bash environment by adding `. <conda-install-dir>/etc/profile.d/conda.sh` to your `~/.bash_profile` or `~/.bashrc`.
 
 2. Run:
 ```
